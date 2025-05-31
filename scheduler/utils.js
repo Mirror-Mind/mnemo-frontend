@@ -181,7 +181,7 @@ export const openaiChat = new ChatOpenAI({
     temperature: 0,
     maxTokens: 1000
 });
-
+// comm
 // Upload media to WhatsApp Cloud API
 export async function uploadMediaToWhatsApp(audioBuffer, mimeType = 'audio/mpeg') {
   console.log(`[WhatsApp Media] Attempting to upload media. Size: ${audioBuffer.byteLength} bytes, Type: ${mimeType}`);
