@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
-import { IconBrandGithub, IconBrandGoogle, IconLoader, IconAlertCircle, IconLink, IconCheck, IconLock, IconBrandWhatsapp } from "@tabler/icons-react";
+import { IconBrandGithub, IconBrandGoogle, IconLoader, IconAlertCircle, IconLink, IconCheck, IconLock, IconBrandWhatsapp, IconBrandLinkedin } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -43,7 +43,7 @@ type SessionData = {
   user: ExtendedUser;
 }
 
-type Provider = "github" | "google";
+type Provider = "github" | "google" | "linkedin";
 
 export default function ProvidersPage() {
   const router = useRouter();
@@ -512,6 +512,80 @@ export default function ProvidersPage() {
           ) : (
             <Button onClick={() => handleConnectProvider('github')} size="sm"> 
               <IconLink className="mr-2 h-4 w-4" /> Connect GitHub
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+
+      {/* LinkedIn Provider Card */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <IconBrandLinkedin className="h-5 w-5" /> LinkedIn
+          </CardTitle>
+          <CardDescription>
+            Connect your LinkedIn account to access your professional profile and network.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isProviderConnected('linkedin') ? (
+            <div>
+              <p className="text-sm text-green-600 flex items-center mb-2">
+                <IconCheck className="h-4 w-4 mr-1" /> Connected
+              </p>
+              
+              {/* Display LinkedIn profile info if available */}
+              {providerProfiles['linkedin'] && (
+                <div className="flex items-center gap-3 mt-3 mb-3">
+                  {providerProfiles['linkedin'].image && (
+                    <div className="h-10 w-10 overflow-hidden rounded-full">
+                      <img 
+                        src={providerProfiles['linkedin'].image} 
+                        alt="Profile" 
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    {providerProfiles['linkedin'].name && (
+                      <p className="font-medium">{providerProfiles['linkedin'].name}</p>
+                    )}
+                    {providerProfiles['linkedin'].email && (
+                      <p className="text-xs text-muted-foreground">{providerProfiles['linkedin'].email}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {getAccountScope('linkedin').length > 0 && (
+                <details className="mt-1 text-xs">
+                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground">View Scopes ({getAccountScope('linkedin').length})</summary>
+                  <div className="mt-1 space-y-0.5 pl-4 text-muted-foreground">
+                    {getAccountScope('linkedin').map(scope => (
+                      <div key={scope}>{scope}</div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Not connected.</p>
+          )}
+        </CardContent>
+        <CardFooter className="border-t px-6 py-3">
+          {isProviderConnected('linkedin') ? (
+            <Button 
+              variant="destructive" 
+              onClick={() => handleUnlinkProvider('linkedin')} 
+              disabled={isDisconnecting === 'linkedin'}
+              size="sm"
+            >
+              {isDisconnecting === 'linkedin' ? <IconLoader className="mr-2 h-4 w-4 animate-spin" /> : <IconLink className="mr-2 h-4 w-4" />} 
+              Disconnect LinkedIn
+            </Button>
+          ) : (
+            <Button onClick={() => handleConnectProvider('linkedin')} size="sm">
+              <IconLink className="mr-2 h-4 w-4" /> Connect LinkedIn
             </Button>
           )}
         </CardFooter>

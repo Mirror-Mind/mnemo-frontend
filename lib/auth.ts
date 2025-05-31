@@ -49,11 +49,21 @@ export const auth = betterAuth({
       ],
       redirectURI: getEnvVar('BETTERAUTH_URL') ? `${getEnvVar('BETTERAUTH_URL')}/api/auth/callback/github` : "http://localhost:3000/api/auth/callback/github",
     },
+    linkedin: {
+      clientId: getEnvVar('LINKEDIN_CLIENT_ID', 'dummy-client-id'),
+      clientSecret: getEnvVar('LINKEDIN_CLIENT_SECRET', 'dummy-client-secret'),
+      scope: [
+        "openid",
+        "profile",
+        "email"
+      ],
+      redirectURI: getEnvVar('BETTERAUTH_URL') ? `${getEnvVar('BETTERAUTH_URL')}/api/auth/callback/linkedin` : "http://localhost:3000/api/auth/callback/linkedin",
+    },
   },
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: ["google", "github"],
+      trustedProviders: ["google", "github", "linkedin"],
       allowUnlinkingAll: true
     },
   },
@@ -101,7 +111,11 @@ export const auth = betterAuth({
       };
     })
   ],
-  trustedOrigins: ['https://orbia.ishaan812.com'],
+  trustedOrigins: [
+    'https://orbia.ishaan812.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+  ],
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),

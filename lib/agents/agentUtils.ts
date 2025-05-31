@@ -16,6 +16,7 @@ import { getCalendarListTool, getCalendarCreateTool, getCalendarDeleteTool } fro
 import { getDocsListTool, getDocsContentTool } from './tools/googleDocs';
 import { getGitHubPullRequestsListTool, getGitHubPullRequestDetailsTool } from './tools/github';
 import { getGmailListTool, getGmailReadTool, getGmailSendTool } from './tools/gmail';
+import { getLinkedInBasicProfileTool, getLinkedInFullProfileTool } from './tools/linkedin';
 import { 
   getMemorySearchTool, 
   getMemoryAddTool, 
@@ -242,6 +243,8 @@ const getAgentTools = () => [
   getGmailListTool(getCurrentUserId),
   getGmailReadTool(getCurrentUserId),
   getGmailSendTool(getCurrentUserId),
+  getLinkedInBasicProfileTool(getCurrentUserId),
+  getLinkedInFullProfileTool(getCurrentUserId),
   getMemorySearchTool(getCurrentUserId),
   getMemoryAddTool(getCurrentUserId),
   getMemoryGetAllTool(getCurrentUserId),
