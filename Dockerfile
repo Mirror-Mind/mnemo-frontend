@@ -1,4 +1,4 @@
-# Dockerfile for Orbia Production Deployment
+# Dockerfile for Mnemo Production Deployment
 FROM node:18-alpine AS base
 
 # Install dependencies only when needed
@@ -38,7 +38,7 @@ ENV DATABASE_URL=${DATABASE_URL:-postgresql://dummy:dummy@localhost:5432/dummy}
 ENV USE_REDIS_MEM0=${USE_REDIS_MEM0:-false}
 ENV NODE_ENV=production
 ENV REDIS_URL=${REDIS_URL:-redis://localhost:6379}
-ENV MEM0_COLLECTION_NAME=${MEM0_COLLECTION_NAME:-orbia-memories}
+ENV MEM0_COLLECTION_NAME=${MEM0_COLLECTION_NAME:-mnemo-memories}
 
 # Google OAuth (build time)
 ENV GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-dummy-google-client-id}

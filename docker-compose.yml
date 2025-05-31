@@ -1,10 +1,10 @@
 services:
-  # Main Orbia Application
+  # Main Mnemo Application
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: orbia-app
+    container_name: mnemo-app
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -15,17 +15,17 @@ services:
     environment:
       - NODE_ENV=production
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      - DATABASE_URL=postgresql://orbia:orbia_password@postgres:5432/orbia_db
+      - DATABASE_URL=postgresql://mnemo:mnemo_password@postgres:5432/mnemo_db
       - BETTER_AUTH_URL=http://localhost:3000
       - USE_REDIS_MEM0=true
-      - MEM0_COLLECTION_NAME=orbia-memories
+      - MEM0_COLLECTION_NAME=mnemo-memories
       # Node.js optimizations for long-running processes
       - NODE_OPTIONS=--max-old-space-size=2048 --max-http-header-size=32768
       - UV_THREADPOOL_SIZE=16
     networks:
-      - orbia-network
+      - mnemo-network
     volumes:
-      - orbia-storage:/app/storage
+      - mnemo-storage:/app/storage
     # Resource limits for better performance
     deploy:
       resources:
@@ -45,12 +45,12 @@ services:
   # PostgreSQL Database with pgvector support
   postgres:
     image: pgvector/pgvector:pg17
-    container_name: orbia-postgres
+    container_name: mnemo-postgres
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=orbia
-      - POSTGRES_PASSWORD=orbia_password
-      - POSTGRES_DB=orbia_db
+      - POSTGRES_USER=mnemo
+      - POSTGRES_PASSWORD=mnemo_password
+      - POSTGRES_DB=mnemo_db
       - PGDATA=/var/lib/postgresql/data/pgdata
       # Performance optimizations
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=scram-sha-256
@@ -60,9 +60,9 @@ services:
     ports:
       - "5433:5432"
     networks:
-      - orbia-network
+      - mnemo-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U orbia -d orbia_db"]
+      test: ["CMD-SHELL", "pg_isready -U mnemo -d mnemo_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -83,7 +83,7 @@ services:
   # Redis for Mem0 Vector Storage - Updated to latest version
   redis:
     image: redis/redis-stack:7.4.0-v0
-    container_name: orbia-redis
+    container_name: mnemo-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -93,7 +93,7 @@ services:
     environment:
       - REDIS_ARGS=--save 900 1 300 10 60 10000 --appendonly yes --appendfsync everysec
     networks:
-      - orbia-network
+      - mnemo-network
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
@@ -111,7 +111,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: orbia-scheduler
+    container_name: mnemo-scheduler
     restart: unless-stopped
     depends_on:
       - redis
@@ -121,22 +121,22 @@ services:
     environment:
       - NODE_ENV=production
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      - DATABASE_URL=postgresql://orbia:orbia_password@postgres:5432/orbia_db
+      - DATABASE_URL=postgresql://mnemo:mnemo_password@postgres:5432/mnemo_db
       - BETTER_AUTH_SECRET=this-is-a-very-long-secret-key-for-testing-purposes-in-docker-compose
       - BETTER_AUTH_URL=http://localhost:3000
       - OPENAI_API_KEY=sk-test-key-dummy-for-docker-testing-only
       - USE_REDIS_MEM0=true
-      - MEM0_COLLECTION_NAME=orbia-memories
+      - MEM0_COLLECTION_NAME=mnemo-memories
     command: ["node", "scheduler/index.js"]
     networks:
-      - orbia-network
+      - mnemo-network
     volumes:
-      - orbia-storage:/app/storage
+      - mnemo-storage:/app/storage
 
   # Nginx Reverse Proxy - Updated to latest stable version
   nginx:
     image: nginx:1.26-alpine
-    container_name: orbia-nginx
+    container_name: mnemo-nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -148,7 +148,7 @@ services:
     depends_on:
       - app
     networks:
-      - orbia-network
+      - mnemo-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
       interval: 30s
@@ -156,7 +156,7 @@ services:
       retries: 3
 
 networks:
-  orbia-network:
+  mnemo-network:
     driver: bridge
     ipam:
       config:
@@ -167,5 +167,5 @@ volumes:
     driver: local
   redis-data:
     driver: local
-  orbia-storage:
+  mnemo-storage:
     driver: local 

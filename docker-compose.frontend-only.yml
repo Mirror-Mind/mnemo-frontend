@@ -1,10 +1,10 @@
 services:
-  # Main Orbia Application
+  # Main Mnemo Application
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: orbia-app
+    container_name: mnemo-app
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -13,11 +13,11 @@ services:
       - NODE_ENV=production
       - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
       - USE_REDIS_MEM0=${USE_REDIS_MEM0:-false}
-      - MEM0_COLLECTION_NAME=${MEM0_COLLECTION_NAME:-orbia-memories}
+      - MEM0_COLLECTION_NAME=${MEM0_COLLECTION_NAME:-mnemo-memories}
       - NODE_OPTIONS=--max-old-space-size=2048 --max-http-header-size=32768
       - UV_THREADPOOL_SIZE=16
     volumes:
-      - orbia-storage:/app/storage
+      - mnemo-storage:/app/storage
     deploy:
       resources:
         limits:
@@ -34,5 +34,5 @@ services:
       start_period: 60s
 
 volumes:
-  orbia-storage:
+  mnemo-storage:
     driver: local 

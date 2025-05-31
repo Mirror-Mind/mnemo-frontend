@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Orbia VPS Deployment Script
+# Mnemo VPS Deployment Script
 # Run this on a fresh Ubuntu 22.04+ VPS
 
 set -e
 
-echo "🚀 Starting Orbia deployment on VPS..."
+echo "🚀 Starting Mnemo deployment on VPS..."
 
 # Update system
 echo "📦 Updating system packages..."
@@ -34,8 +34,8 @@ sudo ufw --force enable
 
 # Clone repository (you'll need to replace with your repo)
 echo "📥 Cloning repository..."
-git clone <your-repo-url> orbia
-cd orbia
+git clone <your-repo-url> mnemo
+cd mnemo
 
 # Set up environment file
 echo "⚙️ Setting up environment..."
