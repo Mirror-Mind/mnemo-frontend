@@ -1,0 +1,34 @@
+- Message sedning to not working after hosting via api
+- Figure out how to invite people for alpha, full process
+- Timezon not working
+- Favicon debugging
+- Morning Podcast
+- whatslink logo upgrade in dashboard
+- Zod Schema for response checking
+- Make bot more action_taking, give examples of actions
+- Figure out how to trim messages when it gets too long
+- Verification of google app
+- Verification of Meta BCP
+- Use better response formats on whatsapp (Partially done but needs to be done better)
+
+[P1]
+- Move to FASTAPI lmao
+- Add timezone to login flow and use in prompt and timezone based job scheduler for diff timezones
+- Payments flow
+- Commands: Request Help, Bug Report etc
+- FineTuning, SEO of landing page and dashboard.
+- Performance of agent make it faster
+- SMTP support for login 
+- OTP based verification for whatsapp phone number
+- Multiple google account support (premium feature)
+
+[P2] (post beta)
+- List on AI Agents Directory
+
+Later
+- MCP integration
+- V2V call agent
+- More integration and tools, contacts, microsoft etc
+
+Bugs:
+- Calendar and Docs widget not working if logging in again sometimes

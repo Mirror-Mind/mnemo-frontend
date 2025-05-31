@@ -1,0 +1,12 @@
+{
+  '.': {
+    types: './dist/index.d.ts',
+    require: './dist/index.js',
+    import: './dist/index.mjs'
+  },
+  './oss': {
+    types: './dist/oss/index.d.ts',
+    require: './dist/oss/index.js',
+    import: './dist/oss/index.mjs'
+  }
+}

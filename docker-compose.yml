@@ -1,0 +1,171 @@
+services:
+  # Main Orbia Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orbia-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+      - postgres
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - DATABASE_URL=postgresql://orbia:orbia_password@postgres:5432/orbia_db
+      - BETTER_AUTH_URL=http://localhost:3000
+      - USE_REDIS_MEM0=true
+      - MEM0_COLLECTION_NAME=orbia-memories
+      # Node.js optimizations for long-running processes
+      - NODE_OPTIONS=--max-old-space-size=2048 --max-http-header-size=32768
+      - UV_THREADPOOL_SIZE=16
+    networks:
+      - orbia-network
+    volumes:
+      - orbia-storage:/app/storage
+    # Resource limits for better performance
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
+
+  # PostgreSQL Database with pgvector support
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: orbia-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=orbia
+      - POSTGRES_PASSWORD=orbia_password
+      - POSTGRES_DB=orbia_db
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      # Performance optimizations
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=scram-sha-256
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - orbia-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orbia -d orbia_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track=all
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+
+  # Redis for Mem0 Vector Storage - Updated to latest version
+  redis:
+    image: redis/redis-stack:7.4.0-v0
+    container_name: orbia-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    volumes:
+      - redis-data:/data
+    environment:
+      - REDIS_ARGS=--save 900 1 300 10 60 10000 --appendonly yes --appendfsync everysec
+    networks:
+      - orbia-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    sysctls:
+      - net.core.somaxconn=1024
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  # Scheduler Service (for morning reviews, etc.)
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orbia-scheduler
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - postgres
+      - app
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - DATABASE_URL=postgresql://orbia:orbia_password@postgres:5432/orbia_db
+      - BETTER_AUTH_SECRET=this-is-a-very-long-secret-key-for-testing-purposes-in-docker-compose
+      - BETTER_AUTH_URL=http://localhost:3000
+      - OPENAI_API_KEY=sk-test-key-dummy-for-docker-testing-only
+      - USE_REDIS_MEM0=true
+      - MEM0_COLLECTION_NAME=orbia-memories
+    command: ["node", "scheduler/index.js"]
+    networks:
+      - orbia-network
+    volumes:
+      - orbia-storage:/app/storage
+
+  # Nginx Reverse Proxy - Updated to latest stable version
+  nginx:
+    image: nginx:1.26-alpine
+    container_name: orbia-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./certbot-webroot:/var/www/certbot:ro
+    depends_on:
+      - app
+    networks:
+      - orbia-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  orbia-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  orbia-storage:
+    driver: local 

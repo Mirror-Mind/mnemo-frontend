@@ -1,0 +1,38 @@
+services:
+  # Main Orbia Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orbia-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
+      - USE_REDIS_MEM0=${USE_REDIS_MEM0:-false}
+      - MEM0_COLLECTION_NAME=${MEM0_COLLECTION_NAME:-orbia-memories}
+      - NODE_OPTIONS=--max-old-space-size=2048 --max-http-header-size=32768
+      - UV_THREADPOOL_SIZE=16
+    volumes:
+      - orbia-storage:/app/storage
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  orbia-storage:
+    driver: local 

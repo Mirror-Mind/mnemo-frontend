@@ -1,0 +1,16 @@
+[
+  {
+    "lc": 1,
+    "type": "constructor",
+    "id": [
+      "langchain_core",
+      "messages",
+      "HumanMessage"
+    ],
+    "kwargs": {
+      "content": "fetch me my calendar",
+      "additional_kwargs": {},
+      "response_metadata": {}
+    }
+  }
+]
