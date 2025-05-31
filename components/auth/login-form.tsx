@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { authClient } from "@/lib/auth-client";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { Alert, AlertDescription } from "../ui/alert";
 import { Terminal } from "lucide-react";
 
 import { IconLoader } from "@tabler/icons-react";
@@ -83,7 +83,7 @@ export function LoginForm({
           setError(ctx.error.message);
           setLoading(false);
         },
-      }
+      },
     );
   }
 
@@ -142,8 +142,8 @@ export function LoginForm({
                     "Login"
                   )}
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full"
                   onClick={handleGoogleSignIn}
                   type="button"

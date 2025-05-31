@@ -5,7 +5,6 @@ import { PrismaClient } from "@prisma/client";
 // Learn more: https://pris.ly/d/help/next-js-best-practices
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
-
 // Create a new PrismaClient instance with connection pooling configuration
 const createPrismaClient = () => {
   return new PrismaClient({
@@ -16,7 +15,10 @@ const createPrismaClient = () => {
         }connection_limit=5&pool_timeout=20`,
       },
     },
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "error", "warn"]
+        : ["error"],
   });
 };
 
