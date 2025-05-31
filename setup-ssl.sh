@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# SSL Setup Script for orbia.ishaan812.com
+# SSL Setup Script for mnemo.ishaan812.com
 # This script helps set up Let's Encrypt SSL certificates
 
 set -e
 
-DOMAIN="orbia.ishaan812.com"
+DOMAIN="mnemo.ishaan812.com"
 EMAIL="ishaan.shah@gmail.com"  # Replace with your actual email
 
 echo "Setting up SSL certificates for $DOMAIN"
