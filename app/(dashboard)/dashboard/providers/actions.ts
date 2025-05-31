@@ -78,4 +78,90 @@ export const removePhoneNumberAction = async () => {
     console.error("Error removing phone number:", error);
     return { failure: "Failed to remove phone number." };
   }
+};
+
+// Define types for preferences
+interface UserPreferences {
+  interests?: string[];
+  capabilities?: {
+    [key: string]: boolean;
+  };
+  communicationSettings?: {
+    briefingSchedule?: string;
+    focusHours?: {
+      start?: string;
+      end?: string;
+    };
+    meetingPrepTiming?: string;
+  };
+}
+
+const updatePreferencesSchema = z.object({
+  preferences: z.any(), // Will be stringified JSON
+});
+
+type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>;
+
+// Action to update user preferences
+export const updateUserPreferencesAction = async (data: UpdatePreferencesInput) => {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session?.user?.id) {
+    return { failure: "User not authenticated" };
+  }
+
+  try {
+    // Stringify the preferences object
+    const preferencesString = JSON.stringify(data.preferences);
+    
+    console.log(`Updating preferences for user: ${session.user.id}`);
+    const updatedUser = await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        preferences: preferencesString,
+      },
+    });
+    
+    console.log(`Successfully updated preferences for user: ${session.user.id}`);
+    return { success: "Preferences updated successfully." };
+  } catch (error) {
+    console.error("Error updating preferences:", error);
+    return { failure: "Failed to update preferences." };
+  }
+};
+
+// Action to get user preferences
+export const getUserPreferencesAction = async () => {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session?.user?.id) {
+    return { failure: "User not authenticated" };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { preferences: true },
+    });
+
+    if (!user) {
+      return { failure: "User not found" };
+    }
+
+    // Parse the preferences JSON or return default structure
+    let preferences: UserPreferences = {};
+    if (user.preferences) {
+      try {
+        preferences = JSON.parse(user.preferences);
+      } catch (error) {
+        console.error("Error parsing user preferences:", error);
+        preferences = {};
+      }
+    }
+
+    return { success: true, data: preferences };
+  } catch (error) {
+    console.error("Error fetching preferences:", error);
+    return { failure: "Failed to fetch preferences." };
+  }
 }; 

@@ -104,6 +104,7 @@ export const auth = betterAuth({
           image: fullUser.image,
           phoneNumber: fullUser.phoneNumber,
           phoneNumberVerified: fullUser.phoneNumberVerified,
+          preferences: fullUser.preferences,
           accounts: fullUser.accounts, // Use accounts fetched with the user
           // Add any other necessary fields from fullUser
         },

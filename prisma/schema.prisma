@@ -18,6 +18,7 @@ model User {
   phoneNumber         String?
   phoneNumberVerified Boolean?
   lang                String?
+  preferences         String?   @db.Text  // Store user preferences as JSON string
   sessions            Session[]
   accounts            Account[]
   userThread          UserThread?
