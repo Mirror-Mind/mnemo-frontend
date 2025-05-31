@@ -29,6 +29,13 @@ const bree = new Bree({
       worker: {
         cwd: process.cwd()
       }
+    },
+    {
+      name: 'morning-podcast',
+      interval: 'at 9:30 am Asia/Kolkata',
+      worker: {
+        cwd: process.cwd()
+      }
     }
   ]   
 });

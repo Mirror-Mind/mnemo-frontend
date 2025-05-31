@@ -1,4 +1,6 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { Blob } from 'buffer';
+
 const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
@@ -50,6 +52,9 @@ export async function sendWhatsAppMessage(to, message, replyToMessageId) {
       payload.text = {
         body: parsedContent.text
       };
+    } else if (parsedContent.message_type === "audio") {
+      payload.type = "audio";
+      payload.audio = parsedContent.audio;
     } else if (parsedContent.message_type === "interactive") {
       // TODO: Validation to have better than splicing use mini model to validate
       payload.type = "interactive";
@@ -141,3 +146,67 @@ export const geminiChat = new ChatGoogleGenerativeAI({
 }).bind({
   response_format: { type: "json_object" },
 });
+
+// Upload media to WhatsApp Cloud API
+export async function uploadMediaToWhatsApp(audioBuffer, mimeType = 'audio/mpeg') {
+  if (!META_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+    console.error("WhatsApp API credentials not configured");
+    return null;
+  }
+
+  try {
+    const url = `https://graph.facebook.com/v19.0/${WHATSAPP_PHONE_NUMBER_ID}/media`;
+    
+    // Create a boundary for the multipart form data
+    const boundary = `----formdata-polyfill-${Math.random().toString(36)}`;
+    
+    // Create the multipart form data body manually
+    const fileName = 'podcast.mp3';
+    const bodyParts = [
+      `--${boundary}\r\n`,
+      `Content-Disposition: form-data; name="messaging_product"\r\n\r\n`,
+      `whatsapp\r\n`,
+      `--${boundary}\r\n`,
+      `Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n`,
+      `Content-Type: ${mimeType}\r\n\r\n`,
+    ];
+    
+    const bodyEnd = `\r\n--${boundary}--\r\n`;
+    
+    // Calculate content length
+    const bodyStart = bodyParts.join('');
+    const totalLength = Buffer.byteLength(bodyStart) + audioBuffer.byteLength + Buffer.byteLength(bodyEnd);
+    
+    // Create the complete body
+    const startBuffer = Buffer.from(bodyStart, 'utf8');
+    const endBuffer = Buffer.from(bodyEnd, 'utf8');
+    const completeBody = Buffer.concat([
+      startBuffer,
+      Buffer.from(audioBuffer),
+      endBuffer
+    ]);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${META_ACCESS_TOKEN}`,
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': completeBody.length.toString()
+      },
+      body: completeBody
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("Error uploading media to WhatsApp:", errorData);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log("Media uploaded successfully. Media ID:", data.id);
+    return data.id;
+  } catch (error) {
+    console.error("Error uploading media to WhatsApp:", error);
+    return null;
+  }
+}
