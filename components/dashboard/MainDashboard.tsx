@@ -44,6 +44,7 @@ import {
   IconAlertCircle,
   IconLoader,
   IconLogout,
+  IconBrandLinkedin,
 } from "@tabler/icons-react";
 import { getUserPreferencesAction, updateUserPreferencesAction } from "@/app/(dashboard)/dashboard/providers/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -51,38 +52,153 @@ import { authClient } from "@/lib/auth-client";
 
 // Connected Integrations Section (Always Visible)
 function ConnectedIntegrations() {
+  const [session, setSession] = useState<any>(null);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDisconnecting, setIsDisconnecting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchSession() {
+      try {
+        const { data, error } = await authClient.getSession();
+        if (error) {
+          setError(error.message || "Failed to fetch session");
+          return;
+        }
+        setSession(data);
+        if (data?.user && 'accounts' in data.user) {
+          const userAccounts = data.user.accounts;
+          setAccounts(Array.isArray(userAccounts) ? userAccounts : []);
+        }
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch session data");
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchSession();
+  }, []);
+
+  const isProviderConnected = (providerId: string) => {
+    return accounts.some(account => account.providerId === providerId);
+  };
+
+  const handleUnlinkProvider = async (provider: string) => {
+    try {
+      setError(null);
+      setSuccessMessage(null);
+      setIsDisconnecting(provider);
+      
+      const account = accounts.find(acc => acc.providerId === provider);
+      if (!account) {
+        throw new Error(`No account found for provider ${provider}`);
+      }
+      
+      await authClient.unlinkAccount({
+        providerId: provider,
+      });
+      
+      // Refresh session data
+      const { data } = await authClient.getSession();
+      if (data?.user && 'accounts' in data.user) {
+        const userAccounts = data.user.accounts;
+        setAccounts(Array.isArray(userAccounts) ? userAccounts : []);
+        setSuccessMessage(`Successfully disconnected ${provider}`);
+      }
+      
+      setIsDisconnecting(null);
+    } catch (err: any) {
+      console.error("Error unlinking account:", err);
+      setError(err.message || `Failed to disconnect ${provider}`);
+      setIsDisconnecting(null);
+    }
+  };
+
+  const handleConnectProvider = async (provider: string) => {
+    try {
+      await authClient.linkSocial({
+        provider: provider as any,
+        callbackURL: window.location.href,
+        fetchOptions: {
+          onSuccess: () => {
+            window.location.reload();
+          },
+          onError: (ctx) => {
+            setError(ctx.error?.message || "Failed to connect account");
+          }
+        }
+      });
+    } catch (err: any) {
+      setError(err.message || `Failed to connect ${provider}`);
+    }
+  };
+
   const integrations = [
     {
       name: "WhatsApp",
-      status: "connected",
+      providerId: "whatsapp",
+      status: session?.user?.phoneNumber ? "connected" : "available",
       icon: "💬",
       description: "Primary communication channel",
+      canDisconnect: false, // WhatsApp uses phone number, handled separately
     },
     {
       name: "Google Calendar",
-      status: "connected",
+      providerId: "google",
+      status: isProviderConnected("google") ? "connected" : "available",
       icon: "📅",
       description: "Meeting scheduling & briefings",
+      canDisconnect: true,
     },
     {
       name: "GitHub",
-      status: "connected",
+      providerId: "github", 
+      status: isProviderConnected("github") ? "connected" : "available",
       icon: "🐙",
       description: "Development activity monitoring",
+      canDisconnect: true,
+    },
+    {
+      name: "LinkedIn",
+      providerId: "linkedin",
+      status: isProviderConnected("linkedin") ? "connected" : "available",
+      icon: "💼",
+      description: "Professional network integration",
+      canDisconnect: true,
     },
     {
       name: "Slack",
-      status: "available",
+      providerId: "slack",
+      status: "coming-soon",
       icon: "🔧",
       description: "Team communication integration",
+      canDisconnect: false,
     },
     {
       name: "Jira",
-      status: "available",
+      providerId: "jira",
+      status: "coming-soon",
       icon: "📋",
       description: "Project management insights",
+      canDisconnect: false,
     },
   ];
+
+  if (loading) {
+    return (
+      <Card className="border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-amber-50/50 shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <IconLoader className="h-6 w-6 animate-spin text-amber-600" />
+            <span className="ml-2 text-slate-600">Loading integrations...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-amber-50/50 shadow-lg">
@@ -102,6 +218,20 @@ function ConnectedIntegrations() {
         </div>
       </CardHeader>
       <CardContent className="p-6">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <IconAlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {successMessage && (
+          <Alert variant="default" className="mb-4 border-green-200 bg-green-50">
+            <IconCheck className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {integrations.map((integration) => (
             <div
@@ -120,35 +250,47 @@ function ConnectedIntegrations() {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Badge
-                  variant={
-                    integration.status === "connected" ? "secondary" : "outline"
-                  }
-                  className={
-                    integration.status === "connected"
-                      ? "bg-amber-50 text-amber-700 border border-amber-200"
-                      : "border border-slate-300 text-slate-600"
-                  }
-                >
-                  {integration.status === "connected" ? (
-                    <>
+                {integration.status === "connected" && integration.canDisconnect ? (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleUnlinkProvider(integration.providerId)}
+                    disabled={isDisconnecting === integration.providerId}
+                    className="text-xs"
+                  >
+                    {isDisconnecting === integration.providerId ? (
+                      <IconLoader className="h-3 w-3 mr-1 animate-spin" />
+                    ) : (
                       <IconCheck className="h-3 w-3 mr-1" />
-                      Connected
-                    </>
-                  ) : (
-                    "Available"
-                  )}
-                </Badge>
-                {integration.status === "available" && (
+                    )}
+                    {isDisconnecting === integration.providerId ? "Disconnecting..." : "Disconnect"}
+                  </Button>
+                ) : integration.status === "available" ? (
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => handleConnectProvider(integration.providerId)}
                     className="border border-slate-300 text-slate-700 hover:border-amber-300 hover:text-amber-700"
                   >
                     <IconPlus className="h-3 w-3 mr-1" />
                     Connect
                   </Button>
-                )}
+                ) : integration.status === "coming-soon" ? (
+                  <Badge
+                    variant="outline"
+                    className="border border-blue-300 text-blue-600 bg-blue-50"
+                  >
+                    Coming Soon
+                  </Badge>
+                ) : integration.status === "connected" && !integration.canDisconnect ? (
+                  <Badge
+                    variant="secondary"
+                    className="bg-amber-50 text-amber-700 border border-amber-200"
+                  >
+                    <IconCheck className="h-3 w-3 mr-1" />
+                    Connected
+                  </Badge>
+                ) : null}
               </div>
             </div>
           ))}
