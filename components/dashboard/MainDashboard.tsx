@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
+import React, { useState, useEffect, useTransition, useRef } from "react";
 import Link from "next/link";
 import { CalendarEvents } from "@/components/CalendarEvents";
 import { RecentDocuments } from "@/components/RecentDocuments";
 import { ChatWindow } from "@/components/chatbot/ChatWindow";
+import { RealtimeVoiceAssistant } from "@/components/voice/RealtimeVoiceAssistant";
 import {
   Card,
   CardContent,
@@ -25,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   IconBrandWhatsapp,
   IconCalendar,
@@ -45,6 +47,10 @@ import {
   IconLoader,
   IconLogout,
   IconBrandLinkedin,
+  IconMicrophone,
+  IconMicrophoneOff,
+  IconMessage,
+  IconChartBar,
 } from "@tabler/icons-react";
 import { getUserPreferencesAction, updateUserPreferencesAction } from "@/app/(dashboard)/dashboard/providers/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -576,8 +582,136 @@ function PreferencesTab() {
   );
 }
 
-// Dashboard Tab Content
-function DashboardTab() {
+// Main Dashboard Component
+export function MainDashboard({ user }: { user: any }) {
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [viewMode, setViewMode] = useState<'dashboard' | 'chat'>('dashboard');
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await authClient.signOut();
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      setIsLoggingOut(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-amber-50/30">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_rgba(120,119,198,0.05),_transparent),radial-gradient(circle_at_80%_20%,_rgba(255,206,84,0.08),_transparent)]" />
+
+      <div className="relative container mx-auto px-6 py-8 space-y-8">
+        {/* Welcome Header with Logout */}
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold tracking-tight text-slate-800">
+              Welcome back, {user?.name?.split(" ")[0] || "there"}!
+            </h1>
+            <p className="text-slate-600 text-lg">
+              Your AI Executive Assistant is ready to serve
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-600">
+              {user?.email}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="rounded-lg border-slate-300 text-slate-700 hover:bg-slate-50"
+            >
+              {isLoggingOut ? (
+                <IconLoader className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <IconLogout className="mr-2 h-4 w-4" />
+              )}
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Connected Integrations - Always Visible */}
+        <ConnectedIntegrations />
+
+        {/* Tabs Section */}
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <div className="flex justify-center">
+            <TabsList className="grid w-full grid-cols-2 max-w-md h-12 bg-white border-2 border-stone-300 shadow-sm rounded-xl p-1">
+              <TabsTrigger
+                value="dashboard"
+                data-tab-trigger="true"
+                className="font-semibold text-slate-800 bg-transparent hover:bg-slate-100 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all duration-200 border-0 outline-0"
+              >
+                Dashboard
+              </TabsTrigger>
+              <TabsTrigger
+                value="preferences"
+                data-tab-trigger="true"
+                className="font-semibold text-slate-800 bg-transparent hover:bg-slate-100 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all duration-200 border-0 outline-0"
+              >
+                Preferences
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="dashboard">
+            {/* Main View Toggle inside Dashboard Tab */}
+            <Card className="border border-amber-200 bg-white shadow-sm">
+              <CardHeader className="border-b border-amber-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-semibold text-slate-800">
+                      Executive Command Center
+                    </CardTitle>
+                    <CardDescription className="text-slate-600">
+                      Switch between dashboard overview and voice-enabled chat
+                    </CardDescription>
+                  </div>
+                  
+                  {/* Main View Toggle */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center space-x-2">
+                      <IconChartBar className="h-4 w-4 text-slate-600" />
+                      <span className="text-sm text-slate-600">Dashboard</span>
+                    </div>
+                    <Switch
+                      checked={viewMode === 'chat'}
+                      onCheckedChange={(checked) => setViewMode(checked ? 'chat' : 'dashboard')}
+                      className="data-[state=checked]:bg-amber-500"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <IconMicrophone className="h-4 w-4 text-slate-600" />
+                      <span className="text-sm text-slate-600">Chat</span>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                {viewMode === 'dashboard' ? (
+                  <DashboardView />
+                ) : (
+                  <ChatView />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="preferences">
+            <PreferencesTab />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
+
+// Dashboard View Component
+function DashboardView() {
   return (
     <div className="space-y-6">
       {/* Activity Overview Cards */}
@@ -691,131 +825,20 @@ function DashboardTab() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Mnemo Chat Section */}
-      <Card className="border border-amber-200 bg-white shadow-sm">
-        <CardHeader className="border-b border-amber-100">
-          <CardTitle className="text-xl font-semibold text-slate-800 flex items-center gap-3">
-            <IconBrandWhatsapp className="h-6 w-6 text-amber-600" />
-            Chat with Mnemo
-          </CardTitle>
-          <CardDescription className="text-slate-600">
-            Interact with your AI Executive Assistant directly
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="h-[400px] border border-stone-200 rounded-lg bg-stone-50/30">
-            <ChatWindow
-              endpoint="/api/chat"
-              emptyStateComponent={
-                <div className="text-center text-slate-500 space-y-3">
-                  <IconBrandWhatsapp className="h-12 w-12 text-amber-500 mx-auto" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-700">
-                      Start a conversation
-                    </h3>
-                    <p className="text-sm">
-                      Ask Mnemo about your schedule, documents, or anything else
-                    </p>
-                  </div>
-                </div>
-              }
-              placeholder="Ask Mnemo about your executive tasks..."
-              showIngestForm={false}
-              showIntermediateStepsToggle={false}
-            />
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
 
-// Main Dashboard Component
-export function MainDashboard({ user }: { user: any }) {
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      await authClient.signOut();
-      window.location.href = "/";
-    } catch (error) {
-      console.error("Logout error:", error);
-      setIsLoggingOut(false);
-    }
-  };
-
+// Chat View Component
+function ChatView() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-amber-50/30">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_rgba(120,119,198,0.05),_transparent),radial-gradient(circle_at_80%_20%,_rgba(255,206,84,0.08),_transparent)]" />
-
-      <div className="relative container mx-auto px-6 py-8 space-y-8">
-        {/* Welcome Header with Logout */}
-        <div className="flex justify-between items-center">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-800">
-              Welcome back, {user?.name?.split(" ")[0] || "there"}!
-            </h1>
-            <p className="text-slate-600 text-lg">
-              Your AI Executive Assistant is ready to serve
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-600">
-              {user?.email}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="rounded-lg border-slate-300 text-slate-700 hover:bg-slate-50"
-            >
-              {isLoggingOut ? (
-                <IconLoader className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <IconLogout className="mr-2 h-4 w-4" />
-              )}
-              {isLoggingOut ? "Logging out..." : "Logout"}
-            </Button>
-          </div>
-        </div>
-
-        {/* Connected Integrations - Always Visible */}
-        <ConnectedIntegrations />
-
-        {/* Tabs Section */}
-        <Tabs defaultValue="preferences" className="space-y-6">
-          <div className="flex justify-center">
-            <TabsList className="grid w-full grid-cols-2 max-w-md h-12 bg-white border-2 border-stone-300 shadow-sm rounded-xl p-1">
-              <TabsTrigger
-                value="preferences"
-                data-tab-trigger="true"
-                className="font-semibold text-slate-800 bg-transparent hover:bg-slate-100 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all duration-200 border-0 outline-0"
-              >
-                Preferences
-              </TabsTrigger>
-              <TabsTrigger
-                value="dashboard"
-                data-tab-trigger="true"
-                className="font-semibold text-slate-800 bg-transparent hover:bg-slate-100 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all duration-200 border-0 outline-0"
-              >
-                Dashboard
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="dashboard">
-            <DashboardTab />
-          </TabsContent>
-
-          <TabsContent value="preferences">
-            <PreferencesTab />
-          </TabsContent>
-        </Tabs>
-      </div>
+    <div className="h-[600px] border border-stone-200 rounded-lg bg-stone-50/30">
+      <RealtimeVoiceAssistant 
+        className="h-full"
+        onConnectionChange={(connected) => {
+          console.log('Voice assistant connection changed:', connected);
+        }}
+      />
     </div>
   );
 }

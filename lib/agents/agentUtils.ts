@@ -129,7 +129,11 @@ const createMemoryConfig = () => {
   const isProduction = process.env.NODE_ENV === "production";
   const useRedis = process.env.USE_REDIS_MEM0 === "true" || isProduction;
   
-  if (useRedis) {
+  // Check if Redis URL is actually provided and valid
+  const redisUrl = process.env.REDIS_URL;
+  const hasValidRedisConfig = redisUrl && redisUrl !== "redis://localhost:6379" && redisUrl !== "redis://redis:6379";
+  
+  if (useRedis && hasValidRedisConfig) {
     console.log("[MEM0] Using Redis vector store for production");
     return {
       embedder: {
@@ -144,7 +148,7 @@ const createMemoryConfig = () => {
         config: {
           collectionName: process.env.MEM0_COLLECTION_NAME || "orbia-memories",
           embeddingModelDims: 1536, // For text-embedding-3-small
-          redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
+          redisUrl: redisUrl,
           ...(process.env.REDIS_USERNAME && { username: process.env.REDIS_USERNAME }),
           ...(process.env.REDIS_PASSWORD && { password: process.env.REDIS_PASSWORD }),
         },
@@ -158,7 +162,11 @@ const createMemoryConfig = () => {
       },
     };
   } else {
-    console.log("[MEM0] Using in-memory vector store for development");
+    if (useRedis && !hasValidRedisConfig) {
+      console.log("[MEM0] Redis requested but no valid Redis URL provided, falling back to in-memory store");
+    } else {
+      console.log("[MEM0] Using in-memory vector store for development");
+    }
     return {
       embedder: {
         provider: "openai",
@@ -184,7 +192,43 @@ const createMemoryConfig = () => {
   }
 };
 
-export const memory = new Memory(createMemoryConfig());
+// Create memory instance with error handling
+const createMemoryInstance = () => {
+  try {
+    const config = createMemoryConfig();
+    console.log("[MEM0] Initializing memory with config:", JSON.stringify(config, null, 2));
+    return new Memory(config);
+  } catch (error: any) {
+    console.error("[MEM0] Failed to initialize memory with Redis, falling back to in-memory store:", error.message);
+    // Fallback to in-memory configuration
+    const fallbackConfig = {
+      embedder: {
+        provider: "openai",
+        config: {
+          apiKey: process.env.OPENAI_API_KEY,
+          model: "text-embedding-3-small",
+        },
+      },
+      vectorStore: {
+        provider: "memory",
+        config: {
+          collectionName: "custom-memories",
+        },
+      },
+      llm: {
+        provider: "openai",
+        config: {
+          apiKey: process.env.OPENAI_API_KEY,
+          model: "gpt-4.1-mini-2025-04-14",
+        },
+      },
+    };
+    console.log("[MEM0] Using fallback in-memory configuration");
+    return new Memory(fallbackConfig);
+  }
+};
+
+export const memory = createMemoryInstance();
 
 // Create LLM instances
 const geminiChat = new ChatGoogleGenerativeAI({
@@ -275,6 +319,88 @@ export const whatsappAgent = (() => {
 // Legacy agent reference for backward compatibility
 export const agent = streamAgent;
 
+// Helper function to safely search memory with error handling
+const safeMemorySearch = async (query: string, userId: string, retries = 2): Promise<any> => {
+  // Check if Redis is configured
+  const isProduction = process.env.NODE_ENV === "production";
+  const useRedis = process.env.USE_REDIS_MEM0 === "true" || isProduction;
+  
+  if (!useRedis) {
+    console.log(`[MEMORY] Using in-memory store, performing search for user: ${userId}`);
+  }
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      console.log(`[MEMORY] Searching memories for user: ${userId}, attempt: ${attempt + 1}`);
+      const results = await memory.search(query, { userId, limit: 5 });
+      console.log(`[MEMORY] Search successful for user: ${userId}`);
+      return results;
+    } catch (error: any) {
+      console.error(`[MEMORY] Search error (attempt ${attempt + 1}):`, error.message);
+      
+      // Check for Redis connection errors and skip gracefully
+      if (error.message?.includes('ECONNREFUSED') || 
+          error.message?.includes('Connection refused') ||
+          error.message?.includes('Redis connection') ||
+          error.message?.includes('client is closed') ||
+          error.message?.includes('ENOTFOUND')) {
+        console.log(`[MEMORY] Redis unavailable, skipping memory search for user: ${userId}`);
+        return null; // Skip memory search gracefully
+      }
+      
+      if (attempt === retries) {
+        console.log(`[MEMORY] All search attempts failed for user: ${userId}, continuing without memory`);
+        return null; // Return null instead of throwing to allow agent to continue
+      }
+      
+      // Wait before retry (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    }
+  }
+  return null;
+};
+
+// Helper function to safely add to memory with error handling
+const safeMemoryAdd = async (messages: any[], userId: string, retries = 2): Promise<boolean> => {
+  // Check if Redis is configured
+  const isProduction = process.env.NODE_ENV === "production";
+  const useRedis = process.env.USE_REDIS_MEM0 === "true" || isProduction;
+  
+  if (!useRedis) {
+    console.log(`[MEMORY] Using in-memory store, adding messages for user: ${userId}`);
+  }
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      console.log(`[MEMORY] Adding messages for user: ${userId}, attempt: ${attempt + 1}`);
+      await memory.add(messages, { userId });
+      console.log(`[MEMORY] Add successful for user: ${userId}`);
+      return true;
+    } catch (error: any) {
+      console.error(`[MEMORY] Add error (attempt ${attempt + 1}):`, error.message);
+      
+      // Check for Redis connection errors and skip gracefully
+      if (error.message?.includes('ECONNREFUSED') || 
+          error.message?.includes('Connection refused') ||
+          error.message?.includes('Redis connection') ||
+          error.message?.includes('client is closed') ||
+          error.message?.includes('ENOTFOUND')) {
+        console.log(`[MEMORY] Redis unavailable, skipping memory storage for user: ${userId}`);
+        return false; // Skip memory storage gracefully
+      }
+      
+      if (attempt === retries) {
+        console.log(`[MEMORY] All add attempts failed for user: ${userId}, continuing without memory storage`);
+        return false; // Return false but don't throw to allow agent to continue
+      }
+      
+      // Wait before retry (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    }
+  }
+  return false;
+};
+
 export const streamAgentResponse = async (messages: BaseMessage[], userId: string = "default_user") => {
   setCurrentUserId(userId);
   let processedMessages = [...messages];
@@ -286,10 +412,13 @@ export const streamAgentResponse = async (messages: BaseMessage[], userId: strin
   } else {
     systemMessage = new SystemMessage(AGENT_SYSTEM_PROMPT);
   }
+  
   let memoryMessage: BaseMessage | null = null;
   if (processedMessages.length > 0 && processedMessages[processedMessages.length - 1]._getType() === "human") {
     const userMessage = processedMessages[processedMessages.length - 1].content.toString();
-    const memoryResults = await memory.search(userMessage, { userId, limit: 5 });
+    
+    // Use safe memory search with error handling
+    const memoryResults = await safeMemorySearch(userMessage, userId);
     if (memoryResults && memoryResults.results && memoryResults.results.length > 0) {
       const relevantMemories = memoryResults.results.map((m: any) => m.memory);
       if (relevantMemories.length > 0) {
@@ -298,10 +427,12 @@ export const streamAgentResponse = async (messages: BaseMessage[], userId: strin
       }
     }
   }
+  
   const finalMessages = [systemMessage, memoryMessage, ...processedMessages].filter(Boolean);
   // Create thread configuration for the user
   const threadConfig = await getThreadConfig(userId);
   console.log("[AGENT] Short Memory Messages sent to streamAgent:", JSON.stringify(finalMessages, null, 2));
+  
   const eventStream = await streamAgent.streamEvents(
     { 
       messages: finalMessages as BaseMessage[]
@@ -311,8 +442,11 @@ export const streamAgentResponse = async (messages: BaseMessage[], userId: strin
       configurable: threadConfig.configurable
     },
   );
+  
+  // Use safe memory add with error handling
   const mem0Messages = convertToMem0Format(finalMessages as BaseMessage[]);
-  await memory.add(mem0Messages, { userId });
+  await safeMemoryAdd(mem0Messages, userId);
+  
   return createDataStreamResponse({
     async execute(dataStream) {
       let fullResponse = "";
@@ -330,7 +464,8 @@ export const streamAgentResponse = async (messages: BaseMessage[], userId: strin
           role: "assistant", 
           content: fullResponse 
         };
-        await memory.add([assistantMessage], { userId });
+        // Use safe memory add for assistant response
+        await safeMemoryAdd([assistantMessage], userId);
       }
     },
     onError: (error) => `Error: ${error instanceof Error ? error.message : String(error)}`
@@ -361,7 +496,9 @@ export const getNormalAgentResponse = async (messages: BaseMessage[], userId: st
     let memoryMessage: BaseMessage | null = null;
     if (processedMessages.length > 0 && processedMessages[processedMessages.length - 1]._getType() === "human") {
       const userMessage = processedMessages[processedMessages.length - 1].content.toString();
-      const memoryResults = await memory.search(userMessage, { userId, limit: 5 });
+      
+      // Use safe memory search with error handling
+      const memoryResults = await safeMemorySearch(userMessage, userId);
       console.log("memoryResults", memoryResults);
       if (memoryResults && memoryResults.results && memoryResults.results.length > 0) {
         relevantMemories = memoryResults.results.map((m: any) => m.memory);
@@ -386,8 +523,11 @@ export const getNormalAgentResponse = async (messages: BaseMessage[], userId: st
       configurable: threadConfig.configurable
     });
     console.log("Response recieved", response);
+    
+    // Use safe memory add with error handling
     const mem0Messages = convertToMem0Format(finalMessages as BaseMessage[]);
-    await memory.add(mem0Messages, { userId });
+    await safeMemoryAdd(mem0Messages, userId);
+    
     if (response.messages) {
       const lastMessage = response.messages[response.messages.length - 1];
       if (lastMessage && lastMessage._getType() === "ai") {
@@ -395,7 +535,8 @@ export const getNormalAgentResponse = async (messages: BaseMessage[], userId: st
           role: "assistant", 
           content: lastMessage.content.toString() 
         };
-        await memory.add([assistantMessage], { userId });
+        // Use safe memory add for assistant response
+        await safeMemoryAdd([assistantMessage], userId);
       }
     }
     return response;
