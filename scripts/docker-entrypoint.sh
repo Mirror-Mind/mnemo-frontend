@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "🚀 Starting Orbia application..."
+echo "🚀 Starting Mnemo application..."
 
 # Function to check if external PostgreSQL is reachable
 check_postgres() {

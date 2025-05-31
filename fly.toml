@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for orbia-sparkling-tree-7606 on 2025-05-23T17:57:38+05:30
+# fly.toml app configuration file generated for mnemo-sparkling-tree-7606 on 2025-05-23T17:57:38+05:30
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'orbia-sparkling-tree-7606'
+app = 'mnemo-sparkling-tree-7606'
 primary_region = 'lax'
 
 [build]
