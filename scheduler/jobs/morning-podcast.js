@@ -127,18 +127,17 @@ async function createPodcastWithElevenLabs(summary, userEmail, newsData = []) {
   // Generate podcast content based on calendar, email summary, and news
   const podcastContent = generatePodcastScript(summary, userEmail, newsData);
   
-  // Using Adam's voice - energetic, conversational, and perfect for briefings
-  const voiceId = "pNInz6obpgDQGcFmaJgB";
+  // Using the specified voice ID for smoother, more conversational delivery
+  const voiceId = "2WM58lWaTXuuBkN1puHx";
   
   const payload = {
     text: podcastContent,
     model_id: "eleven_multilingual_v2",
     voice_settings: {
-      stability: 0.3,        // Even lower for more dynamic, energetic delivery
-      similarity_boost: 0.85, // Slightly higher for maximum clarity  
-      style: 0.4,            // More conversational style
+      stability: 0.3,
+      similarity_boost: 0.85,
+      style: 0.4,
       use_speaker_boost: true,
-      speed: 1.2             // Faster for rapid briefing pace
     },
     output_format: "mp3_22050_32"
   };
@@ -330,59 +329,66 @@ function generatePodcastScript(summary, userEmail, newsData = []) {
     timeZone: 'Asia/Kolkata'
   });
   
-  let script = `Good morning! It's ${currentTime}, here's your power briefing. `;
+  let script = `Hey there! Good morning, it's ${currentTime}. I've got your daily intel ready, so let's dive right in. `;
   
-  // News Briefing Section - Ultra concise
+  // News Briefing Section - Conversational and engaging
   if (newsData && newsData.length > 0) {
-    script += `Intelligence brief: `;
+    script += `So first up, here's what's happening in the world that you should know about. `;
     
     newsData.forEach((newsItem, index) => {
-      // Extract only the most critical info
-      const content = newsItem.content.substring(0, 200); // Reduced from 400
-      script += `${content.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ')}. `;
+      const content = newsItem.content.substring(0, 250).replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
+      script += `${content}. This could definitely impact your space, so keep an eye on it. `;
     });
     
-    script += `That's your edge. `;
+    script += `Alright, that's the landscape update. `;
   }
   
-  // Calendar section - Ultra rapid
+  // Calendar section - Natural conversation
   if (events && events.length > 0) {
-    script += `Today's missions: `;
+    script += `Now, let's talk about your day ahead. You've got ${events.length} thing${events.length > 1 ? 's' : ''} on your calendar. `;
     
-    events.slice(0, 3).forEach((event, index) => { // Reduced from 4 to 3
+    events.slice(0, 3).forEach((event, index) => {
       const startTime = event.start?.dateTime ? new Date(event.start.dateTime).toLocaleTimeString('en-US', { 
         hour: 'numeric', 
         minute: '2-digit',
         timeZone: 'Asia/Kolkata'
       }) : 'All day';
       
-      script += `${startTime} ${event.summary || 'Meeting'}. `;
+      if (index === 0) {
+        script += `Your first one is at ${startTime} - ${event.summary || 'that meeting'}. `;
+      } else if (index === 1) {
+        script += `Then at ${startTime} you have ${event.summary || 'another meeting'}. `;
+      } else {
+        script += `And later at ${startTime}, there's ${event.summary || 'one more'}. `;
+      }
     });
     
     if (events.length > 3) {
-      script += `Plus ${events.length - 3} more. `;
+      script += `Plus you've got ${events.length - 3} more after that. `;
     }
   } else {
-    script += `Clear schedule, perfect for deep work. `;
+    script += `Actually, your calendar's looking pretty clear today, which is great for getting some deep work done. `;
   }
   
-  // Email section - Super brief
+  // Email section - Like a real assistant
   if (emails && emails.length > 0) {
-    script += `Inbox: ${emails.length} priority message${emails.length > 1 ? 's' : ''}. `;
+    script += `Oh, and about your inbox - you've got ${emails.length} message${emails.length > 1 ? 's' : ''} that need your attention. `;
     
-    // Only mention the most urgent one
     if (emails.length > 0) {
-      const fromName = emails[0].from?.split('<')[0]?.trim().replace(/"/g, '') || 'Important sender';
-      script += `${fromName}: ${emails[0].subject?.substring(0, 25) || 'Important'}. `;
+      const fromName = emails[0].from?.split('<')[0]?.trim().replace(/"/g, '') || 'someone important';
+      const subject = emails[0].subject?.substring(0, 35) || 'something urgent';
+      script += `The priority one is from ${fromName} about ${subject}. `;
+      
+      if (emails.length > 1) {
+        script += `The other ${emails.length - 1} can probably wait a bit. `;
+      }
     }
-    
-    if (emails.length > 1) {
-      script += `${emails.length - 1} more waiting. `;
-    }
+  } else {
+    script += `Your inbox is actually looking pretty manageable right now. `;
   }
   
-  // Ultra quick close
-  script += `You're locked and loaded. Execute with precision, dominate the day!`;
+  // Conversational, motivational close
+  script += `Alright, that's everything you need to know to crush today. You've got this! Go make some magic happen.`;
   
   return script;
 }
