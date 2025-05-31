@@ -48,6 +48,7 @@ cp .env.example .env
 - `DATABASE_URL`: PostgreSQL database connection string
 - `BETTER_AUTH_SECRET`: Secret for authentication
 - `BETTER_AUTH_URL`: Base URL for authentication
+- `PERPLEXITY_API_KEY`: Perplexity Sonar API key for real-time news intelligence in morning podcasts
 
 #### WhatsApp Business API:
 - `META_WHATSAPP_PHONE_NUMBER_ID`: WhatsApp Business phone number ID
@@ -66,6 +67,7 @@ cp .env.example .env
 - `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET`: Google OAuth for Calendar/Drive
 - `GITHUB_TOKEN`: GitHub API token for pull requests
 - `GMAIL_CLIENT_ID` & `GMAIL_CLIENT_SECRET`: Gmail integration
+- `ELEVENLABS_API_KEY`: ElevenLabs API key for text-to-speech in morning podcasts
 
 5. Run the development server:
 ```bash

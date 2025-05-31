@@ -21,31 +21,130 @@ function sendLog(message) {
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_TTS_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
 
-async function createPodcastWithElevenLabs(summary, userEmail) {
+// Perplexity Sonar API configuration
+const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
+const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
+
+// Default news topics to fetch if not specified
+const DEFAULT_NEWS_TOPICS = [
+  'artificial intelligence technology breakthroughs',
+  'startup funding and venture capital',
+  'cryptocurrency and blockchain developments',
+  'space exploration and discoveries',
+  'climate change and renewable energy',
+  'global economic trends and market updates'
+];
+
+async function fetchNewsWithPerplexity(topics = DEFAULT_NEWS_TOPICS) {
+  if (!PERPLEXITY_API_KEY) {
+    sendLog('PERPLEXITY_API_KEY is not configured. Skipping news fetch.');
+    return [];
+  }
+
+  sendLog(`Fetching news for ${topics.length} topics using Perplexity Sonar API in single request`);
+  
+  try {
+    // Combine all topics into a single, comprehensive query
+    const topicsText = topics.map((topic, index) => `${index + 1}. ${topic}`).join('\n');
+    
+    const payload = {
+      model: "sonar-pro", // Using Sonar Pro for more detailed answers with citations
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional news analyst. Provide concise, sharp, and deeply informative news summaries. For each topic, focus on the most significant recent developments and their implications. Include specific details, numbers, and context that matter. Be analytical and insightful, not just descriptive. Structure your response clearly by topic."
+        },
+        {
+          role: "user",
+          content: `Give me the most important recent news stories for each of these topics. For each topic, provide 1-2 key stories with:
+          - What happened (specific details)
+          - Why it matters (implications and context)
+          - Key numbers or data points
+          - What to watch next
+          
+          Topics:
+          ${topicsText}
+          
+          Keep each story to 2-3 sentences maximum but make them information-dense and insightful. Clearly separate each topic with headers.`
+        }
+      ],
+      search_recency_filter: "day", // Focus on very recent news
+      temperature: 0.1, // Low temperature for factual, consistent responses
+      max_tokens: 1200 // Increased for multiple topics
+    };
+    sendLog('Making single API request for all news topics...');
+    const response = await fetch(PERPLEXITY_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      sendLog(`Perplexity API error: ${response.status} - ${errorData}`);
+      return [];
+    }
+
+    const data = await response.json();
+    const newsContent = data.choices[0]?.message?.content;
+    
+    if (newsContent) {
+      // Parse the combined response and structure it by topics
+      const newsData = topics.map((topic, index) => ({
+        topic: topic,
+        content: newsContent, // Full content will be used in podcast script
+        citations: data.citations || []
+      }));
+      
+      sendLog(`Successfully fetched news for all ${topics.length} topics in single request`);
+      sendLog(`Response length: ${newsContent.length} characters`);
+      
+      return [{
+        topic: 'Combined News Intelligence',
+        content: newsContent,
+        citations: data.citations || []
+      }];
+      
+    } else {
+      sendLog('No content received from Perplexity API');
+      return [];
+    }
+    
+  } catch (error) {
+    sendLog(`Error fetching news from Perplexity API: ${error.message}`);
+    return [];
+  }
+}
+
+async function createPodcastWithElevenLabs(summary, userEmail, newsData = []) {
   if (!ELEVENLABS_API_KEY) {
     throw new Error('ELEVENLABS_API_KEY is not configured');
   }
 
-  // Generate podcast content based on calendar and email summary
-  const podcastContent = generatePodcastScript(summary, userEmail);
+  // Generate podcast content based on calendar, email summary, and news
+  const podcastContent = generatePodcastScript(summary, userEmail, newsData);
   
-  // Using Rachel's voice - warm, expressive voice perfect for daily briefings
-  const voiceId = "21m00Tcm4TlvDq8ikWAM";
+  // Using Adam's voice - energetic, conversational, and perfect for briefings
+  const voiceId = "pNInz6obpgDQGcFmaJgB";
   
   const payload = {
     text: podcastContent,
     model_id: "eleven_multilingual_v2",
     voice_settings: {
-      stability: 0.6,
-      similarity_boost: 0.75,
-      style: 0.1,
-      use_speaker_boost: true
+      stability: 0.3,        // Even lower for more dynamic, energetic delivery
+      similarity_boost: 0.85, // Slightly higher for maximum clarity  
+      style: 0.4,            // More conversational style
+      use_speaker_boost: true,
+      speed: 1.2             // Faster for rapid briefing pace
     },
     output_format: "mp3_22050_32"
   };
 
   sendLog(`Creating audio for user ${userEmail} with voice ${voiceId}`);
-  sendLog(`Content: ${podcastContent.substring(0, 200)}...`);
+  sendLog(`Content includes ${newsData.length} news topics: ${podcastContent.substring(0, 200)}...`);
 
   try {
     const response = await fetch(`${ELEVENLABS_TTS_URL}/${voiceId}`, {
@@ -223,110 +322,67 @@ async function sendPodcastViaWhatsApp(phoneNumber, audioBuffer, userEmail) {
   }
 }
 
-function generatePodcastScript(summary, userEmail) {
+function generatePodcastScript(summary, userEmail, newsData = []) {
   const { events, emails } = summary;
+  const currentTime = new Date().toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    timeZone: 'Asia/Kolkata'
+  });
   
-  // Return shorter podcast if minimal content
-  if ((!events || events.length === 0) && (!emails || emails.length === 0)) {
-    return `<podcast>
-<intro>Good morning! This is your AI briefing assistant with a quick update for ${new Date().toLocaleDateString('en-US', { weekday: 'long' })}.</intro>
-
-<main_content>
-You've got a completely clear schedule today - no meetings, no urgent emails. This is your golden opportunity for deep work and strategic thinking!
-
-<action_items>
-Take advantage of this rare free day. Focus on your biggest priorities, catch up on important projects, or even take some time for strategic planning.
-</action_items>
-</main_content>
-
-<outro>That's your lightning briefing. Make today count!</outro>
-</podcast>`;
+  let script = `Good morning! It's ${currentTime}, here's your power briefing. `;
+  
+  // News Briefing Section - Ultra concise
+  if (newsData && newsData.length > 0) {
+    script += `Intelligence brief: `;
+    
+    newsData.forEach((newsItem, index) => {
+      // Extract only the most critical info
+      const content = newsItem.content.substring(0, 200); // Reduced from 400
+      script += `${content.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ')}. `;
+    });
+    
+    script += `That's your edge. `;
   }
   
-  let script = `<podcast>
-<intro>Good morning! Welcome to your personalized daily briefing. I'm your AI assistant, and I've got the essential intel you need to dominate ${new Date().toLocaleDateString('en-US', { weekday: 'long' })}.</intro>
-
-<main_content>`;
-  
-  // Calendar section - Make it exciting
+  // Calendar section - Ultra rapid
   if (events && events.length > 0) {
-    script += `\n<schedule_briefing>
-🗓️ SCHEDULE ALERT: You've got ${events.length} event${events.length > 1 ? 's' : ''} locked and loaded today.
-
-<event_details>`;
+    script += `Today's missions: `;
     
-    events.slice(0, 4).forEach((event, index) => { // Limit to top 4 events
+    events.slice(0, 3).forEach((event, index) => { // Reduced from 4 to 3
       const startTime = event.start?.dateTime ? new Date(event.start.dateTime).toLocaleTimeString('en-US', { 
         hour: 'numeric', 
         minute: '2-digit',
         timeZone: 'Asia/Kolkata'
       }) : 'All day';
       
-      const priority = index === 0 ? "🔥 PRIORITY: " : index === 1 ? "⚡ NEXT UP: " : "";
-      script += `\n${priority}${startTime} - ${event.summary || 'Meeting'}`;
-      
-      if (event.description && event.description.length > 0) {
-        const shortDesc = event.description.substring(0, 60);
-        script += `. Quick note: ${shortDesc}${event.description.length > 60 ? '...' : ''}`;
-      }
+      script += `${startTime} ${event.summary || 'Meeting'}. `;
     });
     
-    if (events.length > 4) {
-      script += `\nPlus ${events.length - 4} more events in your calendar.`;
+    if (events.length > 3) {
+      script += `Plus ${events.length - 3} more. `;
+    }
+  } else {
+    script += `Clear schedule, perfect for deep work. `;
+  }
+  
+  // Email section - Super brief
+  if (emails && emails.length > 0) {
+    script += `Inbox: ${emails.length} priority message${emails.length > 1 ? 's' : ''}. `;
+    
+    // Only mention the most urgent one
+    if (emails.length > 0) {
+      const fromName = emails[0].from?.split('<')[0]?.trim().replace(/"/g, '') || 'Important sender';
+      script += `${fromName}: ${emails[0].subject?.substring(0, 25) || 'Important'}. `;
     }
     
-    script += `\n</event_details>
-</schedule_briefing>`;
-  } else {
-    script += `\n<schedule_briefing>
-🆓 CLEAR DECK: Zero meetings today. This is your power day for deep work and strategic execution!
-</schedule_briefing>`;
-  }
-  
-  // Email section - Sharp and selective
-  if (emails && emails.length > 0) {
-    script += `\n\n<email_intel>
-📧 INBOX INTELLIGENCE: ${emails.length} critical message${emails.length > 1 ? 's' : ''} need your attention.
-
-<urgent_emails>`;
-    
-    emails.slice(0, 3).forEach((email, index) => { // Only top 3 most important
-      const fromName = email.from?.split('<')[0]?.trim().replace(/"/g, '') || 'Important sender';
-      const priority = index === 0 ? "🚨 URGENT: " : index === 1 ? "⭐ HIGH: " : "📋 REVIEW: ";
-      
-      script += `\n${priority}${fromName} - ${email.subject?.substring(0, 50) || 'Important message'}${email.subject?.length > 50 ? '...' : ''}`;
-    });
-    
-    if (emails.length > 3) {
-      script += `\nPlus ${emails.length - 3} more important messages waiting.`;
+    if (emails.length > 1) {
+      script += `${emails.length - 1} more waiting. `;
     }
-    
-    script += `\n</urgent_emails>
-</email_intel>`;
-  } else {
-    script += `\n\n<email_intel>
-✅ INBOX STATUS: All clear! No urgent emails demanding your immediate attention.
-</email_intel>`;
   }
   
-  // Action items and closing
-  script += `\n\n<action_briefing>
-⚡ TODAY'S MISSION:`;
-  
-  if (events && events.length > 0) {
-    script += `\nStay sharp for your ${events.length} scheduled event${events.length > 1 ? 's' : ''}.`;
-  }
-  
-  if (emails && emails.length > 0) {
-    script += `\nTackle those ${emails.length} priority emails before they pile up.`;
-  }
-  
-  script += `\nFocus on what moves the needle. Eliminate distractions. Execute with precision.
-</action_briefing>
-</main_content>
-
-<outro>That's your intelligence briefing. Now go make things happen! This is your AI assistant signing off.</outro>
-</podcast>`;
+  // Ultra quick close
+  script += `You're locked and loaded. Execute with precision, dominate the day!`;
   
   return script;
 }
@@ -340,6 +396,10 @@ async function morningPodcast() {
   }
   
   try {
+    // Fetch latest news first
+    sendLog('Fetching latest news using Perplexity Sonar API...');
+    const newsData = await fetchNewsWithPerplexity(DEFAULT_NEWS_TOPICS);
+    
     const users = await prisma.user.findMany({
       where: {
         accounts: {
@@ -467,11 +527,11 @@ async function morningPodcast() {
           sendLog(`Gmail API error for ${user.email}: ${gmailError.message}`);
         }
 
-        // Generate podcast
+        // Generate podcast with news data
         const summary = { events, emails };
-        sendLog(`Generating podcast for user ${user.email}`);
+        sendLog(`Generating podcast for user ${user.email} with ${newsData.length} news items`);
         
-        const audioBuffer = await createPodcastWithElevenLabs(summary, user.email);
+        const audioBuffer = await createPodcastWithElevenLabs(summary, user.email, newsData);
         
         await sendPodcastViaWhatsApp(user.phoneNumber, audioBuffer, user.email);
         sendLog(`Successfully processed user: ${user.email}`);
