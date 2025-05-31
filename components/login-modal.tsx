@@ -24,15 +24,15 @@ export function LoginModal({ children }: LoginModalProps) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <div className="h-8 w-8 rounded-full bg-amber-500/10 flex items-center justify-center">
-              <IconCrown className="h-4 w-4 text-amber-500" />
+          <DialogTitle className="flex items-center gap-2 text-xl text-slate-800">
+            <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center border border-amber-200">
+              <IconCrown className="h-4 w-4 text-amber-600" />
             </div>
             Summon the Goddess
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-slate-600">
             Access your divine memory assistant. Login to begin your journey with Mnemo.
           </DialogDescription>
         </DialogHeader>
