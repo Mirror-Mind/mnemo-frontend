@@ -21,10 +21,10 @@ const whatsapp_interactive_prompt = {
   "type": "button",
   "header": {
     "type": "text",
-    "text": "Your Morning Review 🔔"
+    "text": "Your Morning Briefing 🔔"
   },
   "body": {
-    "text": "Here's your morning review for today!"
+    "text": "Here's your Morning Briefing for today!"
   },
   "footer": {
     "text": "Hope you have a productive day today! ✨"
@@ -59,7 +59,7 @@ async function generateReviewWithGemini(summary) {
 }
 
 async function morningReview() {
-  sendLog('Morning review job started');
+  sendLog('Morning Briefing job started');
   try {
     const users = await prisma.user.findMany({
       where: {
@@ -169,7 +169,7 @@ async function morningReview() {
       }
     }
   } catch (error) {
-    sendLog(`Morning review job failed: ${error.message}`);
+    sendLog(`Morning Briefing job failed: ${error.message}`);
     throw error;
   }
 }
@@ -179,11 +179,11 @@ export default morningReview;
 if (parentPort) {
   morningReview()
     .then(() => {
-      sendLog('Morning review job completed');
+      sendLog('Morning Briefing job completed');
       process.exit(0);
     })
     .catch((error) => {
-      sendLog(`Morning review job failed with error: ${error.message}`);
+      sendLog(`Morning Briefing job failed with error: ${error.message}`);
       process.exit(1);
     });
 }

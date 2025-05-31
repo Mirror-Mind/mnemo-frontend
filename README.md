@@ -1,12 +1,12 @@
 # Orbia - Your WhatsApp Personal Assistant
-Orbia is an AI-powered personal assistant that connects to your WhatsApp and integrates with your personal data services like Gmail, Google Calendar, Google Drive, and more to help you manage your life efficiently. Orbia allows to make accessing and searching through all of your productivity apps easier and through a simple easy to use interface (on whatsapp). Orbia functions differently from a normal chatbot since it nudges you first, rather than you always having to chat with it. It will have features like a morning review which will give you a run down of your entire day, dynamic reminders based on email nudges, active periodic nudging for various important tasks, automatically scheduling meetings based on emails etc. It can even give you an every morning podcast of various activities scheduled for your day!
+Orbia is an AI-powered personal assistant that connects to your WhatsApp and integrates with your personal data services like Gmail, Google Calendar, Google Drive, and more to help you manage your life efficiently. Orbia allows to make accessing and searching through all of your productivity apps easier and through a simple easy to use interface (on whatsapp). Orbia functions differently from a normal chatbot since it nudges you first, rather than you always having to chat with it. It will have features like a Morning Briefing which will give you a run down of your entire day, dynamic reminders based on email nudges, active periodic nudging for various important tasks, automatically scheduling meetings based on emails etc. It can even give you an every morning podcast of various activities scheduled for your day!
 
 We chose whatsapp as our first interface, since .Eventually, we want orbia to have various interfaces like a call interface, video interface and make it multilingual and as easy to use as possible by using various generative ui techniques using flows, interactive messages on whatsapp to be a one stop interface for all kinds of tasks and automate them for the user without ever downloading another app or traversing to a website.
 
 ## Features
 
 - **WhatsApp Integration**: Manage your tasks, reminders, and information directly from WhatsApp
-- **Morning Review**: Get a run down of your entire day, including your schedule, important tasks, and any other relevant information
+- **Morning Briefing**: Get a run down of your entire day, including your schedule, important tasks, and any other relevant information
 - **Dynamic Reminders**: Get reminders for important tasks and events based on your email and calendar
 - **Multi-Service Connectivity**: Connect all your productivity apps in one place
 - **Calendar Management**: View, schedule, and modify appointments through simple text commands
@@ -128,7 +128,7 @@ docker-compose up -d
 - **Orbia App**: Next.js application with Redis mem0 integration
 - **Redis Stack**: Vector storage for mem0 + management GUI
 - **Nginx**: Reverse proxy with SSL, rate limiting, and security headers
-- **Scheduler**: Background tasks for morning reviews and reminders
+- **Scheduler**: Background tasks for Morning Briefings and reminders
 
 **External Services Required:**
 - **PostgreSQL Database**: Your external database (Neon, Supabase, AWS RDS, etc.)

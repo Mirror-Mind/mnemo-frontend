@@ -106,7 +106,7 @@ services:
         soft: -1
         hard: -1
 
-  # Scheduler Service (for morning reviews, etc.)
+  # Scheduler Service (for Morning Briefings, etc.)
   scheduler:
     build:
       context: .

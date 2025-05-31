@@ -24,7 +24,7 @@ const bree = new Bree({
   },
   jobs: [
     {
-      name: 'morning-podcast',
+      name: 'morning-combined',
       worker: {
         cwd: process.cwd()
       }

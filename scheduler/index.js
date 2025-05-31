@@ -24,19 +24,12 @@ const bree = new Bree({
   },
   jobs: [
     {
-      name: 'morning-review',
+      name: 'morning-combined',
       interval: 'at 9:20 am Asia/Kolkata',
       worker: {
         cwd: process.cwd()
       }
     },
-    {
-      name: 'morning-podcast',
-      interval: 'at 9:30 am Asia/Kolkata',
-      worker: {
-        cwd: process.cwd()
-      }
-    }
   ]   
 });
 
