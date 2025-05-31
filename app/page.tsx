@@ -16,12 +16,12 @@ import { HeroCarousel } from "@/components/hero-carousel";
 export default function page() {
   return (
     <div className="flex min-h-screen flex-col scroll-smooth">
-      <section className="bg-white relative overflow-hidden min-h-screen flex items-center scroll-section">
-        <div className="absolute inset-0 bg-gradient-to-br from-stone-100/50 to-slate-100/30" />
+      <section className="bg-background relative overflow-hidden min-h-screen flex items-center scroll-section">
+        <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/30" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_rgba(120,119,198,0.1),_transparent),radial-gradient(circle_at_80%_20%,_rgba(255,206,84,0.15),_transparent)]" />
         <div className="absolute inset-0 opacity-20">
           <div
-            className="h-full w-full bg-gradient-to-br from-stone-200/20 to-slate-200/10"
+            className="h-full w-full bg-gradient-to-br from-muted/20 to-muted/10"
             style={{
               backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.02) 5px, rgba(0,0,0,0.02) 10px)`,
             }}
@@ -45,10 +45,10 @@ export default function page() {
                   <p className="text-xl sm:text-3xl lg:text-4xl text-amber-600 font-semibold leading-tight">
                     Mnemo: Your AI Executive Assistant
                   </p>
-                  <p className="text-md italic text-slate-700 font-medium">
+                  <p className="text-md italic text-muted-foreground font-medium">
                     Lives in Your WhatsApp. Never Misses a Beat. ⚡
                   </p>
-                  <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0">
+                  <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0">
                     From VC pitch prep to daily briefings, stay ahead of every meeting, deadline, and opportunity.
                   </p>
                 </div>
@@ -56,36 +56,36 @@ export default function page() {
 
               {/* Key benefits - founder focused */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6">
-                <div className="text-center border border-slate-300 rounded-md p-2">
+                <div className="text-center border border-border rounded-md p-2">
                   <div className="text-2xl sm:text-3xl font-bold text-amber-600 mb-1">
                     📊
                   </div>
-                  <div className="text-xs sm:text-sm text-slate-600">
+                  <div className="text-xs sm:text-sm text-muted-foreground">
                     Meeting Prep
                   </div>
                 </div>
 
-                <div className="text-center border border-slate-300 rounded-md p-2">
+                <div className="text-center border border-border rounded-md p-2">
                   <div className="text-2xl sm:text-3xl font-bold text-amber-500 mb-1">
                     🗓️
                   </div>
-                  <div className="text-xs sm:text-sm text-slate-600">
+                  <div className="text-xs sm:text-sm text-muted-foreground">
                     Daily Briefings
                   </div>
                 </div>
-                <div className="text-center border border-slate-300 rounded-md p-2">
+                <div className="text-center border border-border rounded-md p-2">
                   <div className="text-2xl sm:text-3xl font-bold text-amber-500 mb-1">
                     💡
                   </div>
-                  <div className="text-xs sm:text-sm text-slate-600">
+                  <div className="text-xs sm:text-sm text-muted-foreground">
                     Smart Reminders
                   </div>
                 </div>
-                <div className="text-center border border-slate-300 rounded-md p-2">
+                <div className="text-center border border-border rounded-md p-2">
                   <div className="text-2xl sm:text-3xl font-bold text-amber-600 mb-1">
                     📱
                   </div>
-                  <div className="text-xs sm:text-sm text-slate-600">
+                  <div className="text-xs sm:text-sm text-muted-foreground">
                     Just WhatsApp
                   </div>
                 </div>
@@ -106,7 +106,7 @@ export default function page() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="h-12 px-6 rounded-xl border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-semibold text-sm transition-all duration-300"
+                    className="h-12 px-6 rounded-xl border-2 text-foreground hover:bg-muted font-semibold text-sm transition-all duration-300"
                   >
                     <IconMessage className="mr-2 h-4 w-4" />
                     See How It Works
@@ -128,16 +128,16 @@ export default function page() {
       {/* Founder-focused Features Section */}
       <section
         id="features"
-        className="min-h-screen bg-gradient-to-b from-white to-stone-50 flex items-center scroll-section"
+        className="min-h-screen bg-gradient-to-b from-background to-muted/50 flex items-center scroll-section"
       >
         <div className="container px-4 sm:px-6 py-4">
           <div className="text-center mb-8 lg:mb-4">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-800">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
               <span className="text-amber-600 block text-lg sm:text-xl lg:text-2xl font-normal">
                 Executive Excellence
               </span>
             </h2>
-            <p className="text-base sm:text-lg lg:text-lg text-slate-600 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg lg:text-lg text-muted-foreground max-w-2xl mx-auto">
               The discipline of Stoic leaders, now automated for modern founders.
             </p>
           </div>
@@ -145,21 +145,21 @@ export default function page() {
           <div className="max-w-5xl mx-auto relative">
             {/* Top Text Box - Daily Briefings */}
             <div className="flex justify-center mb-6 lg:mb-8">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 lg:p-5 border border-amber-200/50 max-w-sm lg:max-w-md text-center shadow-lg">
+              <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-4 lg:p-5 border border-amber-200/50 max-w-sm lg:max-w-md text-center shadow-lg">
                 <div className="flex items-center justify-center mb-2 lg:mb-3">
                   <IconSunHigh className="h-5 w-5 lg:h-6 lg:w-6 text-amber-600 mr-2" />
-                  <h3 className="text-lg lg:text-xl font-bold text-slate-800">
+                  <h3 className="text-lg lg:text-xl font-bold text-card-foreground">
                     Daily Briefings
                   </h3>
                 </div>
-                <p className="text-slate-600 text-xs lg:text-sm mb-3 lg:mb-4">
+                <p className="text-muted-foreground text-xs lg:text-sm mb-3 lg:mb-4">
                   Start each day with AI-powered insights about your meetings, deadlines, and priorities
                 </p>
-                <div className="bg-stone-100/60 rounded-lg p-2 lg:p-3 border border-stone-200/50">
+                <div className="bg-muted/60 rounded-lg p-2 lg:p-3 border border-border">
                   <p className="text-xs text-amber-700 font-medium mb-1">
                     Today's Focus
                   </p>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-muted-foreground">
                     📊 VC pitch at 2pm • 🤝 Product demo with enterprise client • ⚡ Board deck deadline tomorrow
                   </p>
                 </div>
@@ -169,21 +169,21 @@ export default function page() {
             {/* Middle Row - Left, Center Image, Right */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-center mb-6 lg:mb-8">
               {/* Left Text Box - Meeting Prep */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 lg:p-5 border border-amber-200/50 text-center lg:text-right shadow-lg">
+              <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-4 lg:p-5 border border-amber-200/50 text-center lg:text-right shadow-lg">
                 <div className="flex items-center justify-center lg:justify-end mb-2 lg:mb-3">
-                  <h3 className="text-lg lg:text-xl font-bold text-slate-800 mr-2">
+                  <h3 className="text-lg lg:text-xl font-bold text-card-foreground mr-2">
                     Meeting Prep
                   </h3>
                   <IconBolt className="h-5 w-5 lg:h-6 lg:w-6 text-amber-600" />
                 </div>
-                <p className="text-slate-600 text-xs lg:text-sm mb-3 lg:mb-4">
+                <p className="text-muted-foreground text-xs lg:text-sm mb-3 lg:mb-4">
                   Automatically prepares you for every meeting with context, background, and talking points
                 </p>
-                <div className="bg-stone-100/60 rounded-lg p-2 lg:p-3 border border-stone-200/50">
+                <div className="bg-muted/60 rounded-lg p-2 lg:p-3 border border-border">
                   <p className="text-xs text-amber-700 font-medium mb-1">
                     Smart Prep
                   </p>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-muted-foreground">
                     💼 "VC meeting at 2pm" → 📋 Investor background, portfolio, recent investments, talking points ready
                   </p>
                 </div>
@@ -211,17 +211,17 @@ export default function page() {
               </div>
 
               {/* Right Text Box - Smart Reminders */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 lg:p-5 border border-amber-200/50 text-center lg:text-left shadow-lg">
+              <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-4 lg:p-5 border border-amber-200/50 text-center lg:text-left shadow-lg">
                 <div className="flex items-center justify-center lg:justify-start mb-2 lg:mb-3">
                   <IconBell className="h-5 w-5 lg:h-6 lg:w-6 text-amber-600 mr-2" />
-                  <h3 className="text-lg lg:text-xl font-bold text-slate-800">
+                  <h3 className="text-lg lg:text-xl font-bold text-card-foreground">
                     Smart Reminders
                   </h3>
                 </div>
-                <p className="text-slate-600 text-xs lg:text-sm mb-3 lg:mb-4">
+                <p className="text-muted-foreground text-xs lg:text-sm mb-3 lg:mb-4">
                   Proactive alerts for deadlines, follow-ups, and important commitments before you forget
                 </p>
-                <div className="bg-stone-100/60 rounded-lg p-2 lg:p-3 border border-stone-200/50">
+                <div className="bg-muted/60 rounded-lg p-2 lg:p-3 border border-border">
                   <p className="text-xs text-amber-700 font-medium mb-1">
                     Priority Alerts
                   </p>
@@ -242,21 +242,21 @@ export default function page() {
 
             {/* Bottom Text Box - Executive Memory */}
             <div className="flex justify-center">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 lg:p-5 border border-amber-200/50 max-w-sm lg:max-w-md text-center shadow-lg">
+              <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-4 lg:p-5 border border-amber-200/50 max-w-sm lg:max-w-md text-center shadow-lg">
                 <div className="flex items-center justify-center mb-2 lg:mb-3">
                   <IconBook className="h-5 w-5 lg:h-6 lg:w-6 text-amber-600 mr-2" />
-                  <h3 className="text-lg lg:text-xl font-bold text-slate-800">
+                  <h3 className="text-lg lg:text-xl font-bold text-card-foreground">
                     Executive Memory
                   </h3>
                 </div>
-                <p className="text-slate-600 text-xs lg:text-sm mb-3 lg:mb-4">
+                <p className="text-muted-foreground text-xs lg:text-sm mb-3 lg:mb-4">
                   Remembers every conversation, commitment, and decision across all your interactions
                 </p>
-                <div className="bg-stone-100/60 rounded-lg p-2 lg:p-3 border border-stone-200/50">
+                <div className="bg-muted/60 rounded-lg p-2 lg:p-3 border border-border">
                   <p className="text-xs text-amber-700 font-medium mb-1">
                     Perfect Recall
                   </p>
-                  <div className="space-y-1 text-xs text-slate-600">
+                  <div className="space-y-1 text-xs text-muted-foreground">
                     <p>
                       "Acme wants metrics" → Q3 revenue, user growth, churn rates ready
                     </p>
@@ -275,7 +275,7 @@ export default function page() {
       {/* Founder Memory capabilities section */}
       <section
         id="memory"
-        className="min-h-screen bg-gradient-to-b from-stone-50 to-white flex items-center scroll-section"
+        className="min-h-screen bg-gradient-to-b from-muted/50 to-background flex items-center scroll-section"
       >
         <div className="container px-4 sm:px-6 py-12">
           <div className="text-center mb-8 lg:mb-12">
@@ -283,11 +283,11 @@ export default function page() {
               <span className="text-amber-600 block text-lg sm:text-xl lg:text-3xl font-normal mb-2">
                 The Discipline of Memory
               </span>
-              <span className="block text-lg text-slate-800 italic">
+              <span className="block text-lg text-foreground italic">
                 That Never Forgets Your Business
               </span>
             </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-slate-600 max-w-xl mx-auto">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-xl mx-auto">
               Every conversation, every commitment, every detail that builds your company.
             </p>
           </div>
@@ -295,38 +295,38 @@ export default function page() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start max-w-6xl mx-auto mb-8 lg:mb-12">
             <div>
               <div className="space-y-4 lg:space-y-6">
-                <div className="bg-white/90 backdrop-blur-sm p-4 lg:p-6 rounded-xl border border-amber-200/50 shadow-lg">
+                <div className="bg-card/90 backdrop-blur-sm p-4 lg:p-6 rounded-xl border border-amber-200/50 shadow-lg">
                   <h3 className="text-lg lg:text-xl font-semibold mb-2 lg:mb-3 flex items-center">
                     <span className="h-7 w-7 lg:h-8 lg:w-8 rounded-full bg-amber-100 flex items-center justify-center mr-3">
                       <IconEye className="h-3 w-3 lg:h-4 lg:w-4 text-amber-600" />
                     </span>
                     Contextual Awareness
                   </h3>
-                  <p className="text-slate-600 mb-3 lg:mb-4 text-sm lg:text-base">
+                  <p className="text-muted-foreground mb-3 lg:mb-4 text-sm lg:text-base">
                     Mnemo maintains the threads of your ongoing business conversations, 
                     so every interaction builds seamlessly on the last.
                   </p>
-                  <div className="bg-stone-100/60 p-3 lg:p-4 rounded-lg border border-stone-200/50">
-                    <p className="text-sm italic text-slate-700">
+                  <div className="bg-muted/60 p-3 lg:p-4 rounded-lg border border-border">
+                    <p className="text-sm italic text-muted-foreground">
                       "Send the deck to the Acme team" → Mnemo knows which pitch deck version 
                       you discussed in yesterday's strategy meeting, no clarification needed.
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-white/90 backdrop-blur-sm p-4 lg:p-6 rounded-xl border border-amber-200/50 shadow-lg">
+                <div className="bg-card/90 backdrop-blur-sm p-4 lg:p-6 rounded-xl border border-amber-200/50 shadow-lg">
                   <h3 className="text-lg lg:text-xl font-semibold mb-2 lg:mb-3 flex items-center">
                     <span className="h-7 w-7 lg:h-8 lg:w-8 rounded-full bg-amber-100 flex items-center justify-center mr-3">
                       <IconBook className="h-3 w-3 lg:h-4 lg:w-4 text-amber-600" />
                     </span>
                     Business Intelligence
                   </h3>
-                  <p className="text-slate-600 mb-3 lg:mb-4 text-sm lg:text-base">
+                  <p className="text-muted-foreground mb-3 lg:mb-4 text-sm lg:text-base">
                     Mnemo remembers investor preferences, team dynamics, customer needs, 
                     and strategic decisions across your entire founding journey.
                   </p>
-                  <div className="bg-stone-100/60 p-3 lg:p-4 rounded-lg border border-stone-200/50">
-                    <p className="text-sm italic text-slate-700">
+                  <div className="bg-muted/60 p-3 lg:p-4 rounded-lg border border-border">
+                    <p className="text-sm italic text-muted-foreground">
                       When you mention "Series A," Mnemo recalls Sarah at Andreessen prefers 
                       detailed unit economics, while Tom at Sequoia focuses on market size first.
                     </p>
@@ -335,7 +335,7 @@ export default function page() {
               </div>
             </div>
 
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-amber-200/50 shadow-lg overflow-hidden">
+            <div className="bg-card/90 backdrop-blur-sm rounded-xl border border-amber-200/50 shadow-lg overflow-hidden">
               <div className="p-3 lg:p-4 bg-amber-500 flex items-center">
                 <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-white/20 mr-3 flex items-center justify-center">
                   <IconBrandWhatsapp className="h-4 w-4 lg:h-5 lg:w-5 text-white" />
@@ -350,10 +350,10 @@ export default function page() {
                 </div>
               </div>
 
-              <div className="p-3 lg:p-4 space-y-3 lg:space-y-4 bg-stone-50/80 max-h-96 overflow-y-auto">
+              <div className="p-3 lg:p-4 space-y-3 lg:space-y-4 bg-muted/80 max-h-96 overflow-y-auto">
                 {/* Day 1 conversation */}
-                <div className="border-b border-stone-200 pb-3 lg:pb-4">
-                  <div className="text-xs text-slate-500 mb-2">
+                <div className="border-b border-border pb-3 lg:pb-4">
+                  <div className="text-xs text-muted-foreground mb-2">
                     March 15 - Strategic Planning
                   </div>
 
@@ -367,8 +367,8 @@ export default function page() {
                   </div>
 
                   <div className="flex items-start gap-2 max-w-[80%] mt-2">
-                    <div className="bg-white rounded-lg p-2 lg:p-3 text-xs lg:text-sm border border-stone-200">
-                      <p className="text-slate-700">
+                    <div className="bg-background rounded-lg p-2 lg:p-3 text-xs lg:text-sm border border-border">
+                      <p className="text-foreground">
                         Noted and remembered. This preference will guide all future 
                         interactions and materials prepared for Sarah.
                       </p>
@@ -378,7 +378,7 @@ export default function page() {
 
                 {/* Day 2 conversation - weeks later */}
                 <div>
-                  <div className="text-xs text-slate-500 mb-2">
+                  <div className="text-xs text-muted-foreground mb-2">
                     April 2 - Investor Prep (3 weeks later)
                   </div>
 
@@ -392,8 +392,8 @@ export default function page() {
                   </div>
 
                   <div className="flex items-start gap-2 max-w-[80%] mt-2">
-                    <div className="bg-white rounded-lg p-2 lg:p-3 text-xs lg:text-sm border border-stone-200">
-                      <p className="text-slate-700">
+                    <div className="bg-background rounded-lg p-2 lg:p-3 text-xs lg:text-sm border border-border">
+                      <p className="text-foreground">
                         Perfect. I've prioritized unit economics data upfront for Sarah, 
                         as she prefers seeing financial metrics before market analysis. 
                         Deck restructured accordingly.
@@ -415,7 +415,7 @@ export default function page() {
           </div>
 
           <div className="text-center">
-            <p className="text-base lg:text-lg text-slate-600 mb-4 lg:mb-6 max-w-xl mx-auto">
+            <p className="text-base lg:text-lg text-muted-foreground mb-4 lg:mb-6 max-w-xl mx-auto">
               <span className="font-semibold text-amber-700">
                 Wisdom in action.
               </span>{" "}

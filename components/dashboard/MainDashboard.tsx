@@ -252,11 +252,11 @@ function ConnectedIntegrations() {
               <div className="flex items-center space-x-2">
                 {integration.status === "connected" && integration.canDisconnect ? (
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
                     onClick={() => handleUnlinkProvider(integration.providerId)}
                     disabled={isDisconnecting === integration.providerId}
-                    className="text-xs"
+                    className="text-xs border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
                   >
                     {isDisconnecting === integration.providerId ? (
                       <IconLoader className="h-3 w-3 mr-1 animate-spin" />
