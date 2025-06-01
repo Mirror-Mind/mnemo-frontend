@@ -324,21 +324,9 @@ function generatePodcastScript(summary, userEmail, newsData = []) {
   
   let script = `Hey there! Good morning, it's ${currentTime}. I've got your daily intel ready, so let's dive right in. `;
   
-  // News Briefing Section - Conversational and engaging
-  if (newsData && newsData.length > 0) {
-    script += `So first up, here's what's happening in the world that you should know about. `;
-    
-    newsData.forEach((newsItem, index) => {
-      const content = newsItem.content.substring(0, 250).replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
-      script += `${content}. This could definitely impact your space, so keep an eye on it. `;
-    });
-    
-    script += `Alright, that's the landscape update. `;
-  }
-  
-  // Calendar section - Natural conversation
+  // Calendar section - Start with events of the day
   if (events && events.length > 0) {
-    script += `Now, let's talk about your day ahead. You've got ${events.length} thing${events.length > 1 ? 's' : ''} on your calendar. `;
+    script += `Let's start with your day ahead. You've got ${events.length} thing${events.length > 1 ? 's' : ''} on your calendar. `;
     
     events.slice(0, 3).forEach((event, index) => {
       const startTime = event.start?.dateTime ? new Date(event.start.dateTime).toLocaleTimeString('en-US', { 
@@ -360,12 +348,15 @@ function generatePodcastScript(summary, userEmail, newsData = []) {
       script += `Plus you've got ${events.length - 3} more after that. `;
     }
   } else {
-    script += `Actually, your calendar's looking pretty clear today, which is great for getting some deep work done. `;
+    script += `Your calendar's looking pretty clear today, which is great for getting some deep work done. `;
   }
   
-  // Email section - Like a real assistant
+  // Email section with time estimates
   if (emails && emails.length > 0) {
-    script += `Oh, and about your inbox - you've got ${emails.length} message${emails.length > 1 ? 's' : ''} that need your attention. `;
+    // Calculate estimated time (assuming 2-3 minutes per email on average)
+    const estimatedMinutes = Math.ceil(emails.length * 2.5);
+    
+    script += `Now about your inbox - you've got ${emails.length} unread message${emails.length > 1 ? 's' : ''} that need your attention, which should take about ${estimatedMinutes} minutes to get through. `;
     
     if (emails.length > 0) {
       const fromName = emails[0].from?.split('<')[0]?.trim().replace(/"/g, '') || 'someone important';
@@ -373,11 +364,23 @@ function generatePodcastScript(summary, userEmail, newsData = []) {
       script += `The priority one is from ${fromName} about ${subject}. `;
       
       if (emails.length > 1) {
-        script += `The other ${emails.length - 1} can probably wait a bit. `;
+        script += `The other ${emails.length - 1} can probably wait a bit, but factor in that time for your planning. `;
       }
     }
   } else {
     script += `Your inbox is actually looking pretty manageable right now. `;
+  }
+  
+  // News Briefing Section - End with news updates
+  if (newsData && newsData.length > 0) {
+    script += `And finally, here's what's happening in the world that you should know about. `;
+    
+    newsData.forEach((newsItem, index) => {
+      const content = newsItem.content.substring(0, 250).replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
+      script += `${content}. This could definitely impact your space, so keep an eye on it. `;
+    });
+    
+    script += `That's your landscape update for today. `;
   }
   
   // Conversational, motivational close
