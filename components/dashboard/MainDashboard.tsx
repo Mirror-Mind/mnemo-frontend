@@ -900,7 +900,7 @@ export function MainDashboard({ user }: { user: any }) {
           </TabsContent>
 
           <TabsContent value="memory-graph">
-            <MemoryGraph />
+            <MemoryGraph user={user} />
           </TabsContent>
 
           <TabsContent value="preferences">
