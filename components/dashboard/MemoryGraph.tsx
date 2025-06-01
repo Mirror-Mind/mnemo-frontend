@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { IconLoader, IconBrain, IconRefresh, IconSearch } from '@tabler/icons-react';
+import { IconLoader, IconBrain, IconRefresh } from '@tabler/icons-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Dynamically import ForceGraph2D to avoid SSR issues
@@ -34,16 +32,24 @@ interface GraphData {
   links: Link[];
 }
 
-export function MemoryGraph() {
+interface MemoryGraphProps {
+  user?: {
+    id: string;
+    name?: string;
+    email?: string;
+  };
+}
+
+export function MemoryGraph({ user }: MemoryGraphProps) {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState('');
   const fgRef = useRef<unknown>(null);
 
-  const fetchMemoryGraph = async (targetUserId: string) => {
-    if (!targetUserId.trim()) {
-      setError('Please enter a user ID');
+  const fetchMemoryGraph = async () => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      setLoading(false);
       return;
     }
 
@@ -51,7 +57,7 @@ export function MemoryGraph() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/memory-graph/${encodeURIComponent(targetUserId)}`);
+      const response = await fetch(`/api/memory-graph/${encodeURIComponent(user.id)}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -63,8 +69,8 @@ export function MemoryGraph() {
       
       // Center the graph after data loads
       setTimeout(() => {
-        if (fgRef.current) {
-          fgRef.current.zoomToFit(400);
+        if (fgRef.current && (fgRef.current as any).zoomToFit) {
+          (fgRef.current as any).zoomToFit(400);
         }
       }, 100);
     } catch (err) {
@@ -75,14 +81,13 @@ export function MemoryGraph() {
     }
   };
 
-  const handleSearch = () => {
-    fetchMemoryGraph(userId);
-  };
+  // Load graph on component mount and when user changes
+  useEffect(() => {
+    fetchMemoryGraph();
+  }, [user?.id]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+  const handleRefresh = () => {
+    fetchMemoryGraph();
   };
 
   const getNodeColor = (node: Node) => {
@@ -120,48 +125,28 @@ export function MemoryGraph() {
               Memory Graph
             </CardTitle>
             <CardDescription className="text-slate-600 mt-2">
-              Visualize the memory map and connections for a specific user
+              Your personal memory network and connections (2 hops)
             </CardDescription>
           </div>
-        </div>
-        
-        {/* Search Section */}
-        <div className="flex items-end gap-4 mt-4">
-          <div className="flex-1">
-            <Label htmlFor="userId" className="text-sm font-medium text-slate-700">
-              User ID
-            </Label>
-            <Input
-              id="userId"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Enter user ID to visualize their memory graph"
-              className="mt-1"
-            />
-          </div>
-          <Button 
-            onClick={handleSearch}
-            disabled={loading || !userId.trim()}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {loading ? (
-              <IconLoader className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <IconSearch className="h-4 w-4 mr-2" />
+          
+          {/* Refresh Button */}
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="text-sm text-slate-600 text-right">
+                <p className="font-medium">{user.name || user.email}</p>
+                <p className="text-xs text-slate-500">User ID: {user.id}</p>
+              </div>
             )}
-            {loading ? 'Loading...' : 'Visualize'}
-          </Button>
-          {graphData.nodes.length > 0 && (
             <Button 
               variant="outline"
-              onClick={() => fetchMemoryGraph(userId)}
+              onClick={handleRefresh}
               disabled={loading}
+              className="flex items-center gap-2"
             >
-              <IconRefresh className="h-4 w-4 mr-2" />
-              Refresh
+              <IconRefresh className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Loading...' : 'Refresh'}
             </Button>
-          )}
+          </div>
         </div>
       </CardHeader>
       
@@ -176,32 +161,21 @@ export function MemoryGraph() {
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <IconLoader className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
-              <p className="text-slate-600">Loading memory graph...</p>
+              <p className="text-slate-600">Loading your memory graph...</p>
+              <p className="text-sm text-slate-500 mt-1">Fetching nodes within 2 hops</p>
             </div>
           </div>
         )}
         
-        {!loading && !error && graphData.nodes.length === 0 && userId && (
+        {!loading && !error && graphData.nodes.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <IconBrain className="h-16 w-16 text-slate-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-700 mb-2">No Memory Data Found</h3>
               <p className="text-slate-500">
-                No memory graph data found for user &quot;{userId}&quot;. 
+                No memory graph data found for your account. 
                 <br />
-                Try a different user ID or check if the user has any memories stored.
-              </p>
-            </div>
-          </div>
-        )}
-        
-        {!loading && !error && graphData.nodes.length === 0 && !userId && (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <IconBrain className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-700 mb-2">Memory Graph Visualization</h3>
-              <p className="text-slate-500">
-                Enter a user ID above to visualize their memory connections and relationships.
+                Start using the AI assistant to build your memory network.
               </p>
             </div>
           </div>
@@ -241,7 +215,7 @@ export function MemoryGraph() {
               }}
               onNodeHover={(node: Node | null) => {
                 if (fgRef.current) {
-                  fgRef.current.canvas().style.cursor = node ? 'pointer' : 'default';
+                  (fgRef.current as any).canvas().style.cursor = node ? 'pointer' : 'default';
                 }
               }}
               onNodeClick={(node: Node) => {
@@ -258,6 +232,7 @@ export function MemoryGraph() {
             <span>Nodes: {graphData.nodes.length}</span>
             <span>Connections: {graphData.links.length}</span>
             <span>Memories: {graphData.nodes.filter(n => n.type === 'memory').length}</span>
+            <span>Users: {graphData.nodes.filter(n => n.type === 'user').length}</span>
           </div>
         )}
       </CardContent>

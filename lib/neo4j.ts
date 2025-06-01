@@ -24,9 +24,12 @@ class Neo4jService {
     try {
       const result = await session.run(
         `
-        MATCH (user:User {user_id: $userId})-[:HAS_MEMORY]->(memory:Memory)
-        OPTIONAL MATCH (memory)-[r:RELATES_TO]->(related:Memory)
-        RETURN user, memory, r, related
+        MATCH (user:User {user_id: $userId})
+        OPTIONAL MATCH path = (user)-[*1..2]-(connected)
+        WHERE connected <> user
+        UNWIND relationships(path) as rel
+        UNWIND nodes(path) as node
+        RETURN DISTINCT user, node, rel, startNode(rel) as source, endNode(rel) as target
         `,
         { userId }
       );
@@ -34,12 +37,14 @@ class Neo4jService {
       const nodes: any[] = [];
       const links: any[] = [];
       const nodeIds = new Set();
+      const linkIds = new Set();
 
       result.records.forEach(record => {
         const user = record.get('user');
-        const memory = record.get('memory');
-        const relationship = record.get('r');
-        const related = record.get('related');
+        const node = record.get('node');
+        const relationship = record.get('rel');
+        const source = record.get('source');
+        const target = record.get('target');
 
         // Add user node
         if (user && !nodeIds.has(user.properties.user_id)) {
@@ -52,44 +57,43 @@ class Neo4jService {
           nodeIds.add(user.properties.user_id);
         }
 
-        // Add memory node
-        if (memory && !nodeIds.has(memory.identity.toString())) {
-          nodes.push({
-            id: memory.identity.toString(),
-            name: memory.properties.content || 'Memory',
-            type: 'memory',
-            properties: memory.properties
-          });
-          nodeIds.add(memory.identity.toString());
+        // Add any connected node
+        if (node && node.identity) {
+          const nodeId = node.identity.toString();
+          if (!nodeIds.has(nodeId)) {
+            const nodeType = node.labels.includes('User') ? 'user' : 'memory';
+            const nodeName = nodeType === 'user' 
+              ? `User: ${node.properties.user_id || nodeId}`
+              : node.properties.content || node.properties.name || 'Memory';
+            
+            nodes.push({
+              id: nodeId,
+              name: nodeName,
+              type: nodeType,
+              properties: node.properties
+            });
+            nodeIds.add(nodeId);
+          }
         }
 
-        // Add related memory node
-        if (related && !nodeIds.has(related.identity.toString())) {
-          nodes.push({
-            id: related.identity.toString(),
-            name: related.properties.content || 'Related Memory',
-            type: 'memory',
-            properties: related.properties
-          });
-          nodeIds.add(related.identity.toString());
-        }
-
-        // Add user-to-memory relationship
-        if (user && memory) {
-          links.push({
-            source: user.properties.user_id,
-            target: memory.identity.toString(),
-            type: 'HAS_MEMORY'
-          });
-        }
-
-        // Add memory-to-memory relationship
-        if (memory && related && relationship) {
-          links.push({
-            source: memory.identity.toString(),
-            target: related.identity.toString(),
-            type: relationship.type || 'RELATES_TO'
-          });
+        // Add relationships
+        if (relationship && source && target) {
+          const sourceId = source.labels.includes('User') 
+            ? source.properties.user_id 
+            : source.identity.toString();
+          const targetId = target.labels.includes('User') 
+            ? target.properties.user_id 
+            : target.identity.toString();
+          
+          const linkId = `${sourceId}-${targetId}-${relationship.type}`;
+          if (!linkIds.has(linkId)) {
+            links.push({
+              source: sourceId,
+              target: targetId,
+              type: relationship.type || 'CONNECTED'
+            });
+            linkIds.add(linkId);
+          }
         }
       });
 
