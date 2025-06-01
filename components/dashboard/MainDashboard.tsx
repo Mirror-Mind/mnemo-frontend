@@ -9,8 +9,6 @@ import { RecentDocuments } from "@/components/RecentDocuments";
 import { GmailWidget } from "@/components/ui/GmailWidget";
 import { ChatWindow } from "@/components/chatbot/ChatWindow";
 import { Conversation } from "@/components/conversation";
-// import { RealtimeVoiceAssistant } from "@/components/voice/RealtimeVoiceAssistant";
-import { MemoryGraph } from "@/components/dashboard/MemoryGraph";
 import {
   Card,
   CardContent,
@@ -834,20 +832,13 @@ export function MainDashboard({ user }: { user: any }) {
         {/* Tabs Section */}
         <Tabs defaultValue="dashboard" className="space-y-6">
           <div className="flex justify-center">
-            <TabsList className="grid w-full grid-cols-3 max-w-2xl h-12 bg-white border-2 border-stone-300 shadow-sm rounded-xl p-1">
+            <TabsList className="grid w-full grid-cols-2 max-w-md h-12 bg-white border-2 border-stone-300 shadow-sm rounded-xl p-1">
               <TabsTrigger
                 value="dashboard"
                 data-tab-trigger="true"
                 className="font-semibold text-slate-800 bg-transparent hover:bg-slate-100 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all duration-200 border-0 outline-0"
               >
                 Dashboard
-              </TabsTrigger>
-              <TabsTrigger
-                value="memory-graph"
-                data-tab-trigger="true"
-                className="font-semibold text-slate-800 bg-transparent hover:bg-slate-100 data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg transition-all duration-200 border-0 outline-0"
-              >
-                Memory Graph
               </TabsTrigger>
               <TabsTrigger
                 value="preferences"
@@ -897,10 +888,6 @@ export function MainDashboard({ user }: { user: any }) {
                 {viewMode === "dashboard" ? <DashboardView /> : <ChatView />}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="memory-graph">
-            <MemoryGraph user={user} />
           </TabsContent>
 
           <TabsContent value="preferences">
