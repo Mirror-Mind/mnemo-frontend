@@ -142,7 +142,7 @@ export function WaitlistModal({ children }: WaitlistModalProps) {
             <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
               <IconBrandWhatsapp className="h-4 w-4 text-green-500" />
             </div>
-            Join the Orbia Waitlist
+            Join the Mnemo Waitlist
           </DialogTitle>
           <DialogDescription>
             Be among the first to experience your personal WhatsApp assistant. We'll notify you when we're ready to launch!
@@ -156,7 +156,7 @@ export function WaitlistModal({ children }: WaitlistModalProps) {
             </div>
             <h3 className="text-lg font-semibold mb-2">You're on the list! 🎉</h3>
             <p className="text-muted-foreground text-sm">
-              We'll send you an email when Orbia is ready for you.
+              We'll send you an email when Mnemo is ready for you.
             </p>
           </div>
         ) : (
@@ -253,7 +253,7 @@ export function WaitlistModal({ children }: WaitlistModalProps) {
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              We'll keep your information safe and only use it to notify you about Orbia.
+              We'll keep your information safe and only use it to notify you about Mnemo.
             </p>
           </form>
         )}

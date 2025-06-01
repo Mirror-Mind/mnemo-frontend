@@ -28,13 +28,13 @@ export const initializeEmailJS = () => {
 
 // Welcome email template data
 export const WELCOME_EMAIL_TEMPLATE = {
-  subject: "Welcome to Orbia Waitlist! 🚀",
+  subject: "Welcome to Mnemo Waitlist! 🚀",
   getHtmlContent: (name: string) => `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Welcome to Orbia</title>
+      <title>Welcome to Mnemo</title>
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -48,21 +48,21 @@ export const WELCOME_EMAIL_TEMPLATE = {
     <body>
       <div class="container">
         <div class="header">
-          <div class="logo">Orbia</div>
+          <div class="logo">Mnemo</div>
           <p>Your Orbit of Personal Productivity</p>
         </div>
         
         <div class="content">
           <h2>Welcome to the waitlist, ${name}! 🎉</h2>
           
-          <p>Thank you for joining the Orbia waitlist. You're now part of an exclusive group who will be among the first to experience the future of personal productivity through WhatsApp.</p>
+          <p>Thank you for joining the Mnemo waitlist. You're now part of an exclusive group who will be among the first to experience the future of personal productivity through WhatsApp.</p>
           
           <div class="highlight">
             <strong>What's Next?</strong><br>
             We're working hard to bring you the best WhatsApp-powered personal assistant. We'll notify you via email as soon as we're ready to launch!
           </div>
           
-          <p><strong>What can you expect from Orbia?</strong></p>
+          <p><strong>What can you expect from Mnemo?</strong></p>
           <ul>
             <li>📅 Seamless calendar management through WhatsApp</li>
             <li>📄 Instant access to your documents and files</li>
@@ -71,41 +71,41 @@ export const WELCOME_EMAIL_TEMPLATE = {
             <li>🔒 Privacy-first approach with secure data handling</li>
           </ul>
           
-          <p>In the meantime, feel free to follow our progress and share Orbia with friends who might be interested!</p>
+          <p>In the meantime, feel free to follow our progress and share Mnemo with friends who might be interested!</p>
           
-          <p>Best regards,<br>The Orbia Team</p>
+          <p>Best regards,<br>The Mnemo Team</p>
         </div>
         
         <div class="footer">
-          <p>© ${new Date().getFullYear()} Orbia. All rights reserved.</p>
-          <p>You received this email because you signed up for the Orbia waitlist.</p>
+          <p>© ${new Date().getFullYear()} Mnemo. All rights reserved.</p>
+          <p>You received this email because you signed up for the Mnemo waitlist.</p>
         </div>
       </div>
     </body>
     </html>
   `,
   getTextContent: (name: string) => `
-Welcome to the Orbia waitlist, ${name}!
+Welcome to the Mnemo waitlist, ${name}!
 
 Thank you for joining our waitlist. You're now part of an exclusive group who will be among the first to experience the future of personal productivity through WhatsApp.
 
 What's Next?
 We're working hard to bring you the best WhatsApp-powered personal assistant. We'll notify you via email as soon as we're ready to launch!
 
-What can you expect from Orbia?
+What can you expect from Mnemo?
 - Seamless calendar management through WhatsApp
 - Instant access to your documents and files  
 - GitHub, Gmail, and other service integrations
 - AI-powered assistance that remembers your preferences
 - Privacy-first approach with secure data handling
 
-In the meantime, feel free to follow our progress and share Orbia with friends who might be interested!
+In the meantime, feel free to follow our progress and share Mnemo with friends who might be interested!
 
 Best regards,
-The Orbia Team
+The Mnemo Team
 
-© ${new Date().getFullYear()} Orbia. All rights reserved.
-You received this email because you signed up for the Orbia waitlist.
+© ${new Date().getFullYear()} Mnemo. All rights reserved.
+You received this email because you signed up for the Mnemo waitlist.
   `
 };
 
@@ -131,9 +131,9 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<{ s
     const emailParams = {
       to_name: name,
       to_email: email,
-      from_name: 'Orbia Team',
+      from_name: 'Mnemo Team',
       subject: WELCOME_EMAIL_TEMPLATE.subject,
-      message: `Hi ${name}! Welcome to the Orbia waitlist. You're now part of an exclusive group who will be among the first to experience the future of personal productivity through WhatsApp. We'll notify you via email as soon as we're ready to launch!`,
+      message: `Hi ${name}! Welcome to the Mnemo waitlist. You're now part of an exclusive group who will be among the first to experience the future of personal productivity through WhatsApp. We'll notify you via email as soon as we're ready to launch!`,
       html_content: WELCOME_EMAIL_TEMPLATE.getHtmlContent(name)
     };
 
@@ -165,11 +165,11 @@ export async function sendAdminNotification(waitlistData: any): Promise<{ succes
     // Prepare admin notification parameters
     const adminParams = {
       to_name: 'Admin',
-      to_email: 'admin@orbia.com', // Replace with your admin email
-      from_name: 'Orbia System',
-      subject: 'New Orbia Waitlist Signup',
+      to_email: 'admin@mnemo.com', // Replace with your admin email
+      from_name: 'Mnemo System',
+      subject: 'New Mnemo Waitlist Signup',
       message: `
-New user joined the Orbia waitlist:
+New user joined the Mnemo waitlist:
 
 Name: ${waitlistData.name}
 Email: ${waitlistData.email}

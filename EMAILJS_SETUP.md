@@ -1,7 +1,7 @@
-# EmailJS Setup Guide for Orbia Waitlist
+# EmailJS Setup Guide for Mnemo Waitlist
 
 ## Overview
-This guide will help you set up EmailJS to send welcome emails when users join the Orbia waitlist.
+This guide will help you set up EmailJS to send welcome emails when users join the Mnemo waitlist.
 
 ## EmailJS Configuration
 
@@ -17,16 +17,16 @@ Your EmailJS template should include these variables that will be automatically 
 ### Welcome Email Template Variables:
 - `{{to_name}}` - User's name
 - `{{to_email}}` - User's email address
-- `{{from_name}}` - "Orbia Team"
-- `{{subject}}` - "Welcome to Orbia Waitlist! 🚀"
+- `{{from_name}}` - "Mnemo Team"
+- `{{subject}}` - "Welcome to Mnemo Waitlist! 🚀"
 - `{{message}}` - Welcome message text
 - `{{html_content}}` - Full HTML email content (optional)
 
 ### Admin Notification Template Variables:
 - `{{to_name}}` - "Admin"
 - `{{to_email}}` - Your admin email
-- `{{from_name}}` - "Orbia System"
-- `{{subject}}` - "New Orbia Waitlist Signup"
+- `{{from_name}}` - "Mnemo System"
+- `{{subject}}` - "New Mnemo Waitlist Signup"
 - `{{message}}` - Signup details
 
 ## Sample EmailJS Template
@@ -81,7 +81,7 @@ Here's a complete example template you can use:
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Welcome to Orbia</title>
+    <title>Welcome to Mnemo</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -92,7 +92,7 @@ Here's a complete example template you can use:
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">Orbia</div>
+            <div class="logo">Mnemo</div>
             <p>Your Orbit of Personal Productivity</p>
         </div>
         <h2>Hi {{to_name}}!</h2>

@@ -32,7 +32,7 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Orbia Assistant",
+      title: "Mnemo Assistant",
       url: "/dashboard/chatbot",
       icon: IconMessageChatbot,
     },

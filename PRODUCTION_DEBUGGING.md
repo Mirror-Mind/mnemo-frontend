@@ -53,7 +53,7 @@ docker compose logs -f app | grep "WhatsApp Bot"
 ### Step 3: Check Container Resources
 ```bash
 # Check container stats
-docker stats orbia-app
+docker stats mnemo-app
 
 # Check if container is hitting limits
 docker compose exec app sh -c "cat /proc/meminfo | grep MemAvailable"
