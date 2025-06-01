@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Orbia",
-  description: "Orbia - Your orbit of personal productivity.",
+  title: "Mnemo",
+  description: "Mnemo - Your orbit of personal productivity.",
   icons: {
     icon: '/favicon.png',
   },

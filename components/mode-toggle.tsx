@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-// Dark mode is enforced for Orbia. This component is now a no-op.
+// Dark mode is enforced for Mnemo. This component is now a no-op.
 export function ModeToggle() {
   return null;
 }
