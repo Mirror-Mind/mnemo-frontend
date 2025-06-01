@@ -4,8 +4,9 @@ import React, { useState, useEffect, useTransition, useRef } from "react";
 import Link from "next/link";
 import { CalendarEvents } from "@/components/CalendarEvents";
 import { RecentDocuments } from "@/components/RecentDocuments";
+import { GmailWidget } from "@/components/ui/GmailWidget";
 import { ChatWindow } from "@/components/chatbot/ChatWindow";
-import { RealtimeVoiceAssistant } from "@/components/voice/RealtimeVoiceAssistant";
+import { Conversation } from "@/components/conversation";
 import {
   Card,
   CardContent,
@@ -55,6 +56,28 @@ import {
 import { getUserPreferencesAction, updateUserPreferencesAction } from "@/app/(dashboard)/dashboard/providers/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authClient } from "@/lib/auth-client";
+
+// Interface for calendar events
+interface CalendarEvent {
+  id: string;
+  summary: string;
+  start: {
+    dateTime?: string;
+    date?: string;
+  };
+  end: {
+    dateTime?: string;
+    date?: string;
+  };
+}
+
+// Interface for document data
+interface DocumentData {
+  id: string;
+  name: string;
+  modifiedTime: string;
+  webViewLink: string;
+}
 
 // Connected Integrations Section (Always Visible)
 function ConnectedIntegrations() {
@@ -152,11 +175,11 @@ function ConnectedIntegrations() {
       canDisconnect: false, // WhatsApp uses phone number, handled separately
     },
     {
-      name: "Google Calendar",
+      name: "Google Suite",
       providerId: "google",
       status: isProviderConnected("google") ? "connected" : "available",
       icon: "📅",
-      description: "Meeting scheduling & briefings",
+      description: "Calendar, Docs & Gmail integration",
       canDisconnect: true,
     },
     {
@@ -716,83 +739,9 @@ function DashboardView() {
     <div className="space-y-6">
       {/* Activity Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border border-stone-200 bg-white shadow-sm hover:shadow-md transition-all duration-200">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-200/50">
-                <IconCalendar className="h-5 w-5 text-amber-600" />
-              </div>
-              <CardTitle className="text-base font-semibold text-slate-800">
-                Today's Schedule
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-800">3 Meetings</div>
-            <p className="text-sm text-slate-500 mt-1">
-              Next: VC Pitch at 2:00 PM
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-stone-200 bg-white shadow-sm hover:shadow-md transition-all duration-200">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-200/50">
-                <IconFiles className="h-5 w-5 text-blue-600" />
-              </div>
-              <CardTitle className="text-base font-semibold text-slate-800">
-                Executive Documents
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-800">
-              12 Documents
-            </div>
-            <p className="text-sm text-slate-500 mt-1">
-              Latest: Board Deck Q4.pdf
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-stone-200 bg-white shadow-sm hover:shadow-md transition-all duration-200">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center border border-rose-200/50">
-                <IconMail className="h-5 w-5 text-rose-600" />
-              </div>
-              <CardTitle className="text-base font-semibold text-slate-800">
-                Priority Emails
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-800">5 Urgent</div>
-            <p className="text-sm text-slate-500 mt-1">
-              From: Investor Relations
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-stone-200 bg-white shadow-sm hover:shadow-md transition-all duration-200">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-200/50">
-                <IconMessageCircle className="h-5 w-5 text-amber-600" />
-              </div>
-              <CardTitle className="text-base font-semibold text-slate-800">
-                Mnemo Activity
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-slate-800">18 Commands</div>
-            <p className="text-sm text-slate-500 mt-1">
-              Last: Meeting prep complete
-            </p>
-          </CardContent>
-        </Card>
+        <TodayScheduleCard />
+        <ExecutiveDocumentsCard />
+        <RecentEmailsCard />
       </div>
 
       {/* Main Content Area */}
@@ -829,16 +778,387 @@ function DashboardView() {
   );
 }
 
+// Today's Schedule Card Component  
+function TodayScheduleCard() {
+  const [eventCount, setEventCount] = useState<number | null>(null);
+  const [nextEvent, setNextEvent] = useState<string>("");
+  const [needsPermission, setNeedsPermission] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchScheduleSummary = async () => {
+      try {
+        const response = await fetch('/api/calendar');
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.code === 'NO_GOOGLE_ACCOUNT' || errorData.code === 'INVALID_TOKEN') {
+            setNeedsPermission(true);
+            return;
+          }
+          throw new Error(errorData.error || 'Failed to fetch calendar events');
+        }
+        
+        const data = await response.json();
+        if (data.events && Array.isArray(data.events)) {
+          const todayEvents = data.events.filter((event: CalendarEvent) => {
+            const eventDate = new Date(event.start?.dateTime || event.start?.date || '');
+            const today = new Date();
+            return eventDate.toDateString() === today.toDateString();
+          });
+          
+          setEventCount(todayEvents.length);
+          if (todayEvents.length > 0) {
+            const nextEventData = todayEvents[0] as CalendarEvent;
+            const startTime = nextEventData.start?.dateTime ? 
+              new Date(nextEventData.start.dateTime).toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit'
+              }) : 'All day';
+            setNextEvent(`Next: ${nextEventData.summary} at ${startTime}`);
+          }
+        }
+      } catch (err) {
+        setError((err as Error).message);
+      }
+    };
+
+    fetchScheduleSummary();
+  }, []);
+
+  const handleConnectGoogle = async () => {
+    try {
+      setIsConnecting(true);
+      await authClient.linkSocial({
+        provider: "google",
+        callbackURL: window.location.href,
+        fetchOptions: {
+          onSuccess: () => {
+            window.location.reload();
+          },
+          onError: (ctx) => {
+            setError(ctx.error?.message || "Failed to connect Google account");
+            setIsConnecting(false);
+          }
+        }
+      });
+    } catch (err: any) {
+      setError(err.message || "Failed to connect Google account");
+      setIsConnecting(false);
+    }
+  };
+
+  if (needsPermission) {
+    return (
+      <Card className="border border-stone-200 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-200/50">
+              <IconCalendar className="h-5 w-5 text-amber-600" />
+            </div>
+            <CardTitle className="text-base font-semibold text-slate-800">
+              Today's Schedule
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-sm text-slate-600 mb-2">Connect for calendar access</p>
+          <Button 
+            size="sm" 
+            onClick={handleConnectGoogle}
+            disabled={isConnecting}
+            className="bg-amber-500 hover:bg-amber-600 text-white text-xs"
+          >
+            {isConnecting ? "Connecting..." : "Connect Google"}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border border-stone-200 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-200/50">
+            <IconCalendar className="h-5 w-5 text-amber-600" />
+          </div>
+          <CardTitle className="text-base font-semibold text-slate-800">
+            Today's Schedule
+          </CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-slate-800">
+          {error ? "Error" : eventCount !== null ? `${eventCount} Meeting${eventCount !== 1 ? 's' : ''}` : "Loading..."}
+        </div>
+        <p className="text-sm text-slate-500 mt-1">
+          {error ? "Failed to load" : nextEvent || "No meetings today"}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Executive Documents Card Component
+function ExecutiveDocumentsCard() {
+  const [documentCount, setDocumentCount] = useState<number | null>(null);
+  const [latestDocument, setLatestDocument] = useState<string>("");
+  const [needsPermission, setNeedsPermission] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDocumentsSummary = async () => {
+      try {
+        const response = await fetch('/api/documents?maxResults=50');
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.code === 'NO_GOOGLE_ACCOUNT' || errorData.code === 'INVALID_TOKEN') {
+            setNeedsPermission(true);
+            return;
+          }
+          throw new Error(errorData.error || 'Failed to fetch documents');
+        }
+        
+        const data = await response.json();
+        if (data.documents && Array.isArray(data.documents)) {
+          setDocumentCount(data.documents.length);
+          if (data.documents.length > 0) {
+            const latest = data.documents[0];
+            setLatestDocument(`Latest: ${latest.name}`);
+          }
+        }
+      } catch (err) {
+        setError((err as Error).message);
+      }
+    };
+
+    fetchDocumentsSummary();
+  }, []);
+
+  const handleConnectGoogle = async () => {
+    try {
+      setIsConnecting(true);
+      await authClient.linkSocial({
+        provider: "google",
+        callbackURL: window.location.href,
+        fetchOptions: {
+          onSuccess: () => {
+            window.location.reload();
+          },
+          onError: (ctx) => {
+            setError(ctx.error?.message || "Failed to connect Google account");
+            setIsConnecting(false);
+          }
+        }
+      });
+    } catch (err: any) {
+      setError(err.message || "Failed to connect Google account");
+      setIsConnecting(false);
+    }
+  };
+
+  if (needsPermission) {
+    return (
+      <Card className="border border-stone-200 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-200/50">
+              <IconFiles className="h-5 w-5 text-blue-600" />
+            </div>
+            <CardTitle className="text-base font-semibold text-slate-800">
+              Executive Documents
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-sm text-slate-600 mb-2">Connect for document access</p>
+          <Button 
+            size="sm" 
+            onClick={handleConnectGoogle}
+            disabled={isConnecting}
+            className="bg-amber-500 hover:bg-amber-600 text-white text-xs"
+          >
+            {isConnecting ? "Connecting..." : "Connect Google"}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border border-stone-200 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-200/50">
+            <IconFiles className="h-5 w-5 text-blue-600" />
+          </div>
+          <CardTitle className="text-base font-semibold text-slate-800">
+            Executive Documents
+          </CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-slate-800">
+          {error ? "Error" : documentCount !== null ? `${documentCount} Document${documentCount !== 1 ? 's' : ''}` : "Loading..."}
+        </div>
+        <p className="text-sm text-slate-500 mt-1">
+          {error ? "Failed to load" : latestDocument || "No documents found"}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Recent Emails Card Component
+function RecentEmailsCard() {
+  const [emailCount, setEmailCount] = useState<number | null>(null);
+  const [latestEmail, setLatestEmail] = useState<string>("");
+  const [needsPermission, setNeedsPermission] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEmailSummary = async () => {
+      try {
+        const response = await fetch('/api/gmail/recent');
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.code === 'NO_GOOGLE_ACCOUNT' || errorData.code === 'INVALID_TOKEN') {
+            setNeedsPermission(true);
+            return;
+          }
+          throw new Error(errorData.error || 'Failed to fetch emails');
+        }
+        
+        const data = await response.json();
+        if (data.emails && Array.isArray(data.emails)) {
+          setEmailCount(data.emails.length);
+          if (data.emails.length > 0) {
+            const latest = data.emails[0];
+            const senderName = latest.from.match(/^"?([^"<]+)"?\s*(?:<[^>]+>)?$/)?.[1]?.trim() || latest.from;
+            setLatestEmail(`From: ${senderName}`);
+          }
+        }
+      } catch (err) {
+        setError((err as Error).message);
+      }
+    };
+
+    fetchEmailSummary();
+  }, []);
+
+  const handleConnectGoogle = async () => {
+    try {
+      setIsConnecting(true);
+      await authClient.linkSocial({
+        provider: "google",
+        callbackURL: window.location.href,
+        fetchOptions: {
+          onSuccess: () => {
+            window.location.reload();
+          },
+          onError: (ctx) => {
+            setError(ctx.error?.message || "Failed to connect Google account");
+            setIsConnecting(false);
+          }
+        }
+      });
+    } catch (err: any) {
+      setError(err.message || "Failed to connect Google account");
+      setIsConnecting(false);
+    }
+  };
+
+  if (needsPermission) {
+    return (
+      <Card className="border border-stone-200 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center border border-rose-200/50">
+              <IconMail className="h-5 w-5 text-rose-600" />
+            </div>
+            <CardTitle className="text-base font-semibold text-slate-800">
+              Priority Emails
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-sm text-slate-600 mb-2">Connect for email access</p>
+          <Button 
+            size="sm" 
+            onClick={handleConnectGoogle}
+            disabled={isConnecting}
+            className="bg-amber-500 hover:bg-amber-600 text-white text-xs"
+          >
+            {isConnecting ? "Connecting..." : "Connect Google"}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border border-stone-200 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center border border-rose-200/50">
+            <IconMail className="h-5 w-5 text-rose-600" />
+          </div>
+          <CardTitle className="text-base font-semibold text-slate-800">
+            Priority Emails
+          </CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-slate-800">
+          {error ? "Error" : emailCount !== null ? `${emailCount} Recent` : "Loading..."}
+        </div>
+        <p className="text-sm text-slate-500 mt-1">
+          {error ? "Failed to load" : latestEmail || "No recent emails"}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 // Chat View Component
 function ChatView() {
+  const [voiceConnection, setVoiceConnection] = useState<boolean>(false);
+  
+  // Disconnect voice assistant when unmounting (switching away from chat)
+  useEffect(() => {
+    return () => {
+      if (voiceConnection) {
+        console.log('ChatView unmounting, forcing voice assistant disconnect...');
+        // The voice assistant components will handle their own cleanup
+      }
+    };
+  }, [voiceConnection]);
+
   return (
-    <div className="h-[600px] border border-stone-200 rounded-lg bg-stone-50/30">
-      <RealtimeVoiceAssistant 
-        className="h-full"
-        onConnectionChange={(connected) => {
-          console.log('Voice assistant connection changed:', connected);
-        }}
-      />
+    <div className="space-y-4">
+      {/* Voice Assistant Header */}
+      <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <div>
+          <h4 className="font-medium text-slate-800">ElevenLabs Voice Assistant</h4>
+          <p className="text-sm text-slate-600">High-quality conversational AI with natural voice</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="px-3 py-1 bg-amber-100 text-amber-800 text-xs rounded-full font-medium">
+            Premium Voice
+          </div>
+        </div>
+      </div>
+
+      {/* Voice Assistant Interface */}
+      <div className="h-[600px] border border-stone-200 rounded-lg bg-stone-50/30 flex items-center justify-center">
+        <Conversation />
+      </div>
     </div>
   );
 }

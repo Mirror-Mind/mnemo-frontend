@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { File, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { File, ExternalLink, AlertCircle } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 interface Document {
   id: string;
@@ -15,40 +17,83 @@ export function RecentDocuments() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsPermission, setNeedsPermission] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
 
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        const response = await fetch("/api/documents");
+  const fetchDocuments = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      setNeedsPermission(false);
+      
+      const response = await fetch("/api/documents");
+      
+      if (!response.ok) {
+        let errorMessage = `Failed to fetch documents (${response.status})`;
+        let errorCode = '';
         
-        if (!response.ok) {
-          let errorMessage = `Failed to fetch documents (${response.status})`;
-          try {
-            const errorData = await response.json();
-            if (errorData.error) {
-              errorMessage = errorData.error;
-            }
-          } catch (parseError) {
-            console.error("Error parsing error response:", parseError);
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
           }
+          if (errorData.code) {
+            errorCode = errorData.code;
+          }
+        } catch (parseError) {
+          console.error("Error parsing error response:", parseError);
+        }
+        
+        // Check if this is a permission error
+        if (errorCode === 'NO_GOOGLE_ACCOUNT' || errorCode === 'INVALID_TOKEN' || 
+            errorMessage.includes("No Google account") || errorMessage.includes("reconnect")) {
+          setNeedsPermission(true);
+          setError("Please connect your Google account to access documents");
+        } else {
           throw new Error(errorMessage);
         }
-
-        try {
-          const data = await response.json();
-          setDocuments(data.documents || []);
-        } catch (parseError) {
-          throw new Error("Invalid data format received from server");
-        }
-      } catch (err) {
-        setError(err.message || "Could not load documents");
-      } finally {
-        setIsLoading(false);
+        return;
       }
-    };
 
+      try {
+        const data = await response.json();
+        setDocuments(data.documents || []);
+      } catch (parseError) {
+        throw new Error("Invalid data format received from server");
+      }
+    } catch (err) {
+      setError((err as Error).message || "Could not load documents");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDocuments();
   }, []);
+
+  const handleConnectGoogle = async () => {
+    try {
+      setIsConnecting(true);
+      await authClient.linkSocial({
+        provider: "google",
+        callbackURL: window.location.href,
+        fetchOptions: {
+          onSuccess: () => {
+            // Refresh the documents data after successful connection
+            fetchDocuments();
+          },
+          onError: (ctx) => {
+            setError(ctx.error?.message || "Failed to connect Google account");
+            setIsConnecting(false);
+          }
+        }
+      });
+    } catch (err: any) {
+      setError(err.message || "Failed to connect Google account");
+      setIsConnecting(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -77,6 +122,22 @@ export function RecentDocuments() {
       <CardContent className="p-0">
         {isLoading ? (
           <div className="flex justify-center py-3 text-sm text-muted-foreground">Loading...</div>
+        ) : needsPermission ? (
+          <div className="p-4 text-center space-y-3">
+            <AlertCircle className="h-8 w-8 text-amber-500 mx-auto" />
+            <div>
+              <p className="text-sm font-medium text-slate-700">Documents Access Needed</p>
+              <p className="text-xs text-slate-500 mt-1">Please give permissions for documents to view your files</p>
+            </div>
+            <Button 
+              size="sm" 
+              onClick={handleConnectGoogle}
+              disabled={isConnecting}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {isConnecting ? "Connecting..." : "Connect Google"}
+            </Button>
+          </div>
         ) : error ? (
           <div className="p-3 text-xs text-red-500">{error}</div>
         ) : documents.length === 0 ? (

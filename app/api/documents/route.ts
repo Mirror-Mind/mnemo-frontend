@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
     
     if (!session || !session.user || !session.user.id) {
       return NextResponse.json({ 
-        error: "No authenticated session" 
+        error: "No authenticated session",
+        code: "UNAUTHENTICATED"
       }, { status: 401 });
     }
     
@@ -23,7 +24,32 @@ export async function GET(request: NextRequest) {
       const result = await googleDocs.getDocumentContent(userId, documentId);
       
       if (!result.success) {
-        throw new Error(result.error);
+        if (result.code === "NO_GOOGLE_ACCOUNT") {
+          return NextResponse.json({ 
+            error: result.error,
+            code: result.code
+          }, { status: 400 });
+        }
+        
+        if (result.code === "INVALID_TOKEN") {
+          return NextResponse.json({ 
+            error: result.error,
+            code: result.code
+          }, { status: 401 });
+        }
+        
+        if (result.code === "DOC_NOT_FOUND") {
+          return NextResponse.json({ 
+            error: result.error,
+            code: result.code
+          }, { status: 404 });
+        }
+        
+        return NextResponse.json({ 
+          error: result.error,
+          details: result.details,
+          code: result.code
+        }, { status: 500 });
       }
       
       return NextResponse.json({
@@ -34,7 +60,25 @@ export async function GET(request: NextRequest) {
       const result = await googleDocs.listDocuments(userId, maxResults);
       
       if (!result.success) {
-        throw new Error(result.error);
+        if (result.code === "NO_GOOGLE_ACCOUNT") {
+          return NextResponse.json({ 
+            error: result.error,
+            code: result.code
+          }, { status: 400 });
+        }
+        
+        if (result.code === "INVALID_TOKEN") {
+          return NextResponse.json({ 
+            error: result.error,
+            code: result.code
+          }, { status: 401 });
+        }
+        
+        return NextResponse.json({ 
+          error: result.error,
+          details: result.details,
+          code: result.code
+        }, { status: 500 });
       }
       
       return NextResponse.json({
@@ -45,10 +89,8 @@ export async function GET(request: NextRequest) {
     console.error("Documents API error:", error);
     return NextResponse.json({ 
       error: "Failed to fetch documents",
-      message: error.message 
-    }, { 
-      status: error.message?.includes("No authenticated session") ? 401 :
-             error.message?.includes("No Google account") ? 400 : 500 
-    });
+      message: error.message,
+      code: "INTERNAL_ERROR" 
+    }, { status: 500 });
   }
 } 
