@@ -2,6 +2,7 @@
 
 export interface UserPreferences {
   interests?: string[];
+  textInput?: string;
   capabilities?: {
     [key: string]: boolean;
   };
@@ -18,6 +19,7 @@ export interface UserPreferences {
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   interests: [],
+  textInput: "",
   capabilities: {
     "daily-briefings": false,
     "meeting-prep": false,

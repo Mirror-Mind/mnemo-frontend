@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -28,12 +28,15 @@ import {
   IconChartLine,
   IconLoader,
   IconAlertCircle,
+  IconX,
+  IconSparkles,
 } from "@tabler/icons-react";
 import {
   updatePhoneNumberAction,
   updateUserPreferencesAction,
 } from "@/app/(dashboard)/dashboard/providers/actions";
 import { DEFAULT_PREFERENCES, UserPreferences } from "@/lib/preferences";
+import { authClient } from "@/lib/auth-client";
 
 // Onboarding Step Components
 function Step1WhatsAppConnection({
@@ -99,11 +102,18 @@ function Step2InterestSelection({
   onNext,
   interests,
   setInterests,
+  customWants,
+  setCustomWants,
 }: {
   onNext: () => void;
   interests: string[];
   setInterests: (interests: string[]) => void;
+  customWants: string;
+  setCustomWants: (wants: string) => void;
 }) {
+  const [currentInput, setCurrentInput] = useState("");
+  const [chips, setChips] = useState<string[]>([]);
+
   const availableInterests = [
     {
       id: "daily-briefings",
@@ -133,12 +143,44 @@ function Step2InterestSelection({
     },
   ];
 
+  const floatingChips = [
+    "AI-powered insights",
+    "Market trends",
+    "Competitor analysis",
+    "Team productivity",
+    "Financial metrics",
+    "Customer feedback",
+    "Strategic planning",
+    "Innovation tracking",
+  ];
+
   const toggleInterest = (interestId: string) => {
     setInterests(
       interests.includes(interestId)
         ? interests.filter((id) => id !== interestId)
         : [...interests, interestId],
     );
+  };
+
+  const addChip = (chipText: string) => {
+    if (chipText.trim() && !chips.includes(chipText.trim())) {
+      const newChips = [...chips, chipText.trim()];
+      setChips(newChips);
+      setCustomWants(newChips.join(", "));
+    }
+  };
+
+  const removeChip = (chipToRemove: string) => {
+    const newChips = chips.filter(chip => chip !== chipToRemove);
+    setChips(newChips);
+    setCustomWants(newChips.join(", "));
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && currentInput.trim()) {
+      addChip(currentInput);
+      setCurrentInput("");
+    }
   };
 
   return (
@@ -180,6 +222,64 @@ function Step2InterestSelection({
         ))}
       </div>
 
+      {/* Custom Interests Section */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label className="text-slate-700 font-medium flex items-center gap-2">
+            <IconSparkles className="h-4 w-4 text-amber-600" />
+            Tell us what else you want your assistant to focus on
+          </Label>
+          <Input
+            placeholder="Type your interests and press Enter..."
+            value={currentInput}
+            onChange={(e) => setCurrentInput(e.target.value)}
+            onKeyDown={handleInputKeyDown}
+            className="h-12 border border-slate-300 focus:border-amber-500 focus:ring-amber-500"
+          />
+          <p className="text-xs text-slate-500">
+            Add custom interests, goals, or areas you want your AI assistant to prioritize
+          </p>
+        </div>
+
+        {/* Custom Chips Display */}
+        {chips.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm text-slate-600 font-medium">Your custom interests:</p>
+            <div className="flex flex-wrap gap-2">
+              {chips.map((chip, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 cursor-pointer flex items-center gap-1"
+                  onClick={() => removeChip(chip)}
+                >
+                  {chip}
+                  <IconX className="h-3 w-3" />
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Floating Suggestion Chips */}
+        <div className="space-y-2">
+          <p className="text-sm text-slate-600 font-medium">Quick suggestions:</p>
+          <div className="flex flex-wrap gap-2">
+            {floatingChips.map((chip, index) => (
+              <Badge
+                key={index}
+                variant="outline"
+                className="border border-slate-300 text-slate-600 hover:border-amber-300 hover:text-amber-700 hover:bg-amber-50 cursor-pointer transition-all duration-200"
+                onClick={() => addChip(chip)}
+              >
+                <IconPlus className="h-3 w-3 mr-1" />
+                {chip}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <Button
         onClick={onNext}
         className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
@@ -191,36 +291,144 @@ function Step2InterestSelection({
 }
 
 function Step3Integrations({ onComplete }: { onComplete: () => void }) {
+  const [session, setSession] = useState<any>(null);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isConnecting, setIsConnecting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchSession() {
+      try {
+        const { data, error } = await authClient.getSession();
+        if (error) {
+          setError(error.message || "Failed to fetch session");
+          return;
+        }
+        setSession(data);
+        if (data?.user && 'accounts' in data.user) {
+          const userAccounts = data.user.accounts;
+          setAccounts(Array.isArray(userAccounts) ? userAccounts : []);
+        }
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch session data");
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchSession();
+  }, []);
+
+  const isProviderConnected = (providerId: string) => {
+    return accounts.some(account => account.providerId === providerId);
+  };
+
+  const handleConnectProvider = async (provider: string) => {
+    try {
+      setError(null);
+      setSuccessMessage(null);
+      setIsConnecting(provider);
+      
+      await authClient.linkSocial({
+        provider: provider as any,
+        callbackURL: window.location.href,
+        fetchOptions: {
+          onSuccess: () => {
+            setSuccessMessage(`Successfully connected ${provider}`);
+            setIsConnecting(null);
+            // Refresh session data
+            authClient.getSession().then(({ data }) => {
+              if (data?.user && 'accounts' in data.user) {
+                const userAccounts = data.user.accounts;
+                setAccounts(Array.isArray(userAccounts) ? userAccounts : []);
+              }
+            });
+          },
+          onError: (ctx) => {
+            setError(ctx.error?.message || `Failed to connect ${provider}`);
+            setIsConnecting(null);
+          }
+        }
+      });
+    } catch (err: any) {
+      setError(err.message || `Failed to connect ${provider}`);
+      setIsConnecting(null);
+    }
+  };
+
   const integrations = [
     {
       id: "calendar",
-      name: "Google Calendar",
-      description: "Meeting scheduling and executive briefings",
+      name: "Google Suite",
+      providerId: "google",
+      description: "Google Suite integration",
       icon: "📅",
-      connected: true,
+      connected: isProviderConnected("google"),
+      canConnect: true,
     },
     {
       id: "github",
       name: "GitHub",
+      providerId: "github",
       description: "Code repository and development updates",
       icon: "🐙",
-      connected: true,
+      connected: isProviderConnected("github"),
+      canConnect: true,
+    },
+    {
+      id: "linkedin",
+      name: "LinkedIn",
+      providerId: "linkedin",
+      description: "Professional network integration",
+      icon: "💼",
+      connected: isProviderConnected("linkedin"),
+      canConnect: true,
     },
     {
       id: "slack",
       name: "Slack",
+      providerId: "slack",
       description: "Team communication and workspace integration",
       icon: "💬",
       connected: false,
+      canConnect: false,
     },
     {
       id: "jira",
       name: "Jira",
+      providerId: "jira",
       description: "Project management and development tracking",
       icon: "🔧",
       connected: false,
+      canConnect: false,
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="max-w-lg mx-auto space-y-8">
+        <div className="text-center space-y-4">
+          <div className="h-20 w-20 mx-auto bg-amber-50 rounded-full flex items-center justify-center border border-amber-200/50 shadow-sm">
+            <IconSettings className="h-10 w-10 text-amber-600" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold text-slate-800">
+              Connect Your Executive Stack
+            </h2>
+            <p className="text-slate-600 max-w-md mx-auto leading-relaxed">
+              Loading available integrations...
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <IconLoader className="h-6 w-6 animate-spin text-amber-600" />
+          <span className="ml-2 text-slate-600">Loading integrations...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto space-y-8">
@@ -237,6 +445,20 @@ function Step3Integrations({ onComplete }: { onComplete: () => void }) {
           </p>
         </div>
       </div>
+
+      {error && (
+        <Alert variant="destructive" className="border border-red-200 bg-red-50">
+          <IconAlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
+      {successMessage && (
+        <Alert variant="default" className="border-green-200 bg-green-50">
+          <IconCheck className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-4">
         {integrations.map((integration) => (
@@ -264,15 +486,28 @@ function Step3Integrations({ onComplete }: { onComplete: () => void }) {
                   <IconCheck className="h-3 w-3 mr-1" />
                   Connected
                 </Badge>
-              ) : (
+              ) : integration.canConnect ? (
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => handleConnectProvider(integration.providerId)}
+                  disabled={isConnecting === integration.providerId}
                   className="border border-slate-300 hover:border-amber-300"
                 >
-                  <IconPlus className="h-4 w-4 mr-1" />
-                  Connect
+                  {isConnecting === integration.providerId ? (
+                    <IconLoader className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <IconPlus className="h-4 w-4 mr-1" />
+                  )}
+                  {isConnecting === integration.providerId ? "Connecting..." : "Connect"}
                 </Button>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="border border-blue-300 text-blue-600 bg-blue-50"
+                >
+                  Coming Soon
+                </Badge>
               )}
             </div>
           </div>
@@ -302,6 +537,7 @@ export function OnboardingFlow() {
   const [currentStep, setCurrentStep] = React.useState(1);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
+  const [customWants, setCustomWants] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -323,10 +559,11 @@ export function OnboardingFlow() {
           return;
         }
 
-        // Always save preferences with complete structure
+        // Always save preferences with complete structure including textInput
         const preferences: UserPreferences = {
           ...DEFAULT_PREFERENCES,
           interests,
+          textInput: customWants, // Store custom wants in textInput field
           capabilities: {
             ...DEFAULT_PREFERENCES.capabilities,
             ...interests.reduce(
@@ -417,6 +654,8 @@ export function OnboardingFlow() {
               onNext={nextStep}
               interests={interests}
               setInterests={setInterests}
+              customWants={customWants}
+              setCustomWants={setCustomWants}
             />
           )}
           {currentStep === 3 && <Step3Integrations onComplete={complete} />}
