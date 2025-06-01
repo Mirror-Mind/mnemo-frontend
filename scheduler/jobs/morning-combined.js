@@ -18,6 +18,62 @@ function sendLog(message) {
   console.log(message);
 }
 
+// User preferences utilities (inline to avoid TypeScript import issues)
+const DEFAULT_PREFERENCES = {
+  interests: [],
+  textInput: "",
+  capabilities: {
+    "daily-briefings": false,
+    "meeting-prep": false,
+    "smart-reminders": false,
+    "vc-updates": false,
+    "market-insights": false,
+    "executive-memory": false,
+  },
+  communicationSettings: {
+    briefingSchedule: "daily-morning",
+    focusHours: {
+      start: "09:00",
+      end: "11:00",
+    },
+    meetingPrepTiming: "30min",
+  },
+};
+
+function parseUserPreferences(preferencesString) {
+  if (!preferencesString) {
+    return DEFAULT_PREFERENCES;
+  }
+
+  try {
+    const parsed = JSON.parse(preferencesString);
+    // Merge with defaults to ensure all fields are present
+    return {
+      ...DEFAULT_PREFERENCES,
+      ...parsed,
+      capabilities: {
+        ...DEFAULT_PREFERENCES.capabilities,
+        ...parsed.capabilities,
+      },
+      communicationSettings: {
+        ...DEFAULT_PREFERENCES.communicationSettings,
+        ...parsed.communicationSettings,
+        focusHours: {
+          ...DEFAULT_PREFERENCES.communicationSettings?.focusHours,
+          ...parsed.communicationSettings?.focusHours,
+        },
+      },
+    };
+  } catch (error) {
+    sendLog(`Error parsing user preferences: ${error.message}`);
+    return DEFAULT_PREFERENCES;
+  }
+}
+
+function hasCapability(preferences, capability) {
+  return preferences.capabilities?.[capability] === true;
+}
+
 // ElevenLabs API configuration
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_TTS_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
@@ -35,6 +91,49 @@ const DEFAULT_NEWS_TOPICS = [
   'climate change and renewable energy',
   'global economic trends and market updates'
 ];
+
+// Generate personalized news topics based on user preferences
+function generatePersonalizedNewsTopics(userPreferences) {
+  const preferences = parseUserPreferences(userPreferences);
+  let topics = [];
+  
+  // Add topics from user's interests array
+  if (preferences.interests && preferences.interests.length > 0) {
+    topics = [...preferences.interests];
+    sendLog(`Using ${topics.length} topics from user interests: ${topics.join(', ')}`);
+  }
+  
+  // Add topics from user's text input if available
+  if (preferences.textInput && preferences.textInput.trim()) {
+    const textTopics = preferences.textInput
+      .split(/[,\n]/)
+      .map(topic => topic.trim())
+      .filter(topic => topic.length > 0 && !topics.some(existing => 
+        existing.toLowerCase().includes(topic.toLowerCase()) || 
+        topic.toLowerCase().includes(existing.toLowerCase())
+      ));
+    
+    if (textTopics.length > 0) {
+      topics = [...topics, ...textTopics];
+      sendLog(`Added ${textTopics.length} topics from text input: ${textTopics.join(', ')}`);
+    }
+  }
+  
+  // If no personalized topics found, use defaults
+  if (topics.length === 0) {
+    sendLog('No personalized topics found, using default topics');
+    return DEFAULT_NEWS_TOPICS;
+  }
+  
+  // Limit to 6 topics to avoid overly long API calls
+  if (topics.length > 6) {
+    topics = topics.slice(0, 6);
+    sendLog(`Limited to 6 topics to manage API call length`);
+  }
+  
+  sendLog(`Generated ${topics.length} personalized news topics`);
+  return topics;
+}
 
 const whatsapp_interactive_prompt = {
   "message_type": "interactive",
@@ -225,21 +324,9 @@ function generatePodcastScript(summary, userEmail, newsData = []) {
   
   let script = `Hey there! Good morning, it's ${currentTime}. I've got your daily intel ready, so let's dive right in. `;
   
-  // News Briefing Section - Conversational and engaging
-  if (newsData && newsData.length > 0) {
-    script += `So first up, here's what's happening in the world that you should know about. `;
-    
-    newsData.forEach((newsItem, index) => {
-      const content = newsItem.content.substring(0, 250).replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
-      script += `${content}. This could definitely impact your space, so keep an eye on it. `;
-    });
-    
-    script += `Alright, that's the landscape update. `;
-  }
-  
-  // Calendar section - Natural conversation
+  // Calendar section - Start with events of the day
   if (events && events.length > 0) {
-    script += `Now, let's talk about your day ahead. You've got ${events.length} thing${events.length > 1 ? 's' : ''} on your calendar. `;
+    script += `Let's start with your day ahead. You've got ${events.length} thing${events.length > 1 ? 's' : ''} on your calendar. `;
     
     events.slice(0, 3).forEach((event, index) => {
       const startTime = event.start?.dateTime ? new Date(event.start.dateTime).toLocaleTimeString('en-US', { 
@@ -261,12 +348,15 @@ function generatePodcastScript(summary, userEmail, newsData = []) {
       script += `Plus you've got ${events.length - 3} more after that. `;
     }
   } else {
-    script += `Actually, your calendar's looking pretty clear today, which is great for getting some deep work done. `;
+    script += `Your calendar's looking pretty clear today, which is great for getting some deep work done. `;
   }
   
-  // Email section - Like a real assistant
+  // Email section with time estimates
   if (emails && emails.length > 0) {
-    script += `Oh, and about your inbox - you've got ${emails.length} message${emails.length > 1 ? 's' : ''} that need your attention. `;
+    // Calculate estimated time (assuming 2-3 minutes per email on average)
+    const estimatedMinutes = Math.ceil(emails.length * 2.5);
+    
+    script += `Now about your inbox - you've got ${emails.length} unread message${emails.length > 1 ? 's' : ''} that need your attention, which should take about ${estimatedMinutes} minutes to get through. `;
     
     if (emails.length > 0) {
       const fromName = emails[0].from?.split('<')[0]?.trim().replace(/"/g, '') || 'someone important';
@@ -274,11 +364,23 @@ function generatePodcastScript(summary, userEmail, newsData = []) {
       script += `The priority one is from ${fromName} about ${subject}. `;
       
       if (emails.length > 1) {
-        script += `The other ${emails.length - 1} can probably wait a bit. `;
+        script += `The other ${emails.length - 1} can probably wait a bit, but factor in that time for your planning. `;
       }
     }
   } else {
     script += `Your inbox is actually looking pretty manageable right now. `;
+  }
+  
+  // News Briefing Section - End with news updates
+  if (newsData && newsData.length > 0) {
+    script += `And finally, here's what's happening in the world that you should know about. `;
+    
+    newsData.forEach((newsItem, index) => {
+      const content = newsItem.content.substring(0, 250).replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
+      script += `${content}. This could definitely impact your space, so keep an eye on it. `;
+    });
+    
+    script += `That's your landscape update for today. `;
   }
   
   // Conversational, motivational close
@@ -451,12 +553,8 @@ async function morningCombined() {
   }
   
   try {
-    // Step 1: Fetch latest news from Perplexity first
-    sendLog('Step 1: Fetching latest news using Perplexity Sonar API...');
-    const newsData = await fetchNewsWithPerplexity(DEFAULT_NEWS_TOPICS);
-    
-    // Step 2: Get users with Google accounts and phone numbers
-    sendLog('Step 2: Getting users with Google accounts and phone numbers...');
+    // Step 1: Get users with Google accounts and phone numbers
+    sendLog('Step 1: Getting users with Google accounts and phone numbers...');
     const users = await prisma.user.findMany({
       where: {
         accounts: {
@@ -471,6 +569,7 @@ async function morningCombined() {
       select: {
         id: true,
         email: true,
+        preferences: true, // Add preferences to the query
         accounts: {
           select: {
             providerId: true,
@@ -494,6 +593,11 @@ async function morningCombined() {
           sendLog(`No Google account found for user: ${user.email}`);
           continue;
         }
+        
+        // Step 2: Generate personalized news topics and fetch news for this user
+        const personalizedTopics = generatePersonalizedNewsTopics(user.preferences);
+        sendLog(`Step 2: Fetching personalized news for ${user.email} with topics: ${personalizedTopics.join(', ')}`);
+        const newsData = await fetchNewsWithPerplexity(personalizedTopics);
         
         // Step 3: Get calendar and emails for each user
         sendLog(`Step 3: Getting calendar and emails for ${user.email}...`);
@@ -634,4 +738,4 @@ if (parentPort) {
       sendLog(`Morning combined job failed with error: ${error.message}`);
       process.exit(1);
     });
-} 
+}
