@@ -16,111 +16,166 @@ import { HeroCarousel } from "@/components/hero-carousel";
 export default function page() {
   return (
     <div className="flex min-h-screen flex-col scroll-smooth">
-      <section className="bg-background relative overflow-hidden min-h-screen flex items-center scroll-section">
-        <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted/30" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_rgba(120,119,198,0.1),_transparent),radial-gradient(circle_at_80%_20%,_rgba(255,206,84,0.15),_transparent)]" />
-        <div className="absolute inset-0 opacity-20">
+      <section className="bg-white relative overflow-hidden min-h-screen flex items-center scroll-section">
+        {/* Light yellow gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 via-amber-25 to-yellow-100/30" />
+        
+        {/* Subtle pattern overlay */}
+        <div className="absolute inset-0 opacity-5">
           <div
-            className="h-full w-full bg-gradient-to-br from-muted/20 to-muted/10"
+            className="h-full w-full"
             style={{
-              backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.02) 5px, rgba(0,0,0,0.02) 10px)`,
+              backgroundImage: `radial-gradient(circle at 1px 1px, rgba(0,0,0,0.15) 1px, transparent 0)`,
+              backgroundSize: '20px 20px'
             }}
           />
         </div>
 
-        <div className="container relative py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full">
-            <div className="lg:col-span-7 space-y-6 sm:space-y-8 text-center lg:text-left flex flex-col justify-center">
+        <div className="container relative py-8 px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
+            
+            {/* Left Column - Content */}
+            <div className="space-y-8 flex flex-col justify-center">
+              
               {/* Badge */}
-              <div className="inline-flex items-center px-4 py-2 bg-amber-50 rounded-full border border-amber-200/50 w-fit mx-auto lg:mx-0 shadow-sm">
-                <IconEye className="h-3 w-3 text-amber-600 mr-2" />
-                <span className="text-xs sm:text-sm font-medium text-amber-700">
-                  The executive assistant every founder needs
-                </span>
+
+
+              {/* Main Mnemo headline - largest text */}
+              <div className="mb-6">
+                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-amber-600 leading-tight mb-2">
+                  Meet Mnemo
+                </h1>
               </div>
 
               {/* Main headline */}
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-6">
                 <div className="space-y-3">
-                  <p className="text-xl sm:text-3xl lg:text-4xl text-amber-600 font-semibold leading-tight">
-                    Mnemo: Your AI Executive Assistant
-                  </p>
-                  <p className="text-md italic text-muted-foreground font-medium">
-                    Lives in Your WhatsApp. Never Misses a Beat. ⚡
-                  </p>
-                  <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0">
-                    From VC pitch prep to daily briefings, stay ahead of every meeting, deadline, and opportunity.
-                  </p>
+                  <h2 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 leading-tight">
+                    Your Memory.
+                  </h2>
+                  <h2 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-amber-500 leading-tight">
+                    Your Mind.
+                  </h2>
+                  <div className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">
+                    <h3 className="text-xl lg:text-2xl font-bold">
+                      Whispered back to you.
+                    </h3>
+                  </div>
                 </div>
+                
+                <p className="text-lg lg:text-xl text-gray-600 max-w-lg leading-relaxed">
+                  <span className="font-semibold text-amber-600">Mnemo</span> is your personal assistant on WhatsApp — powered by AI, grounded in presence, 
+                  and designed to mirror the way you think.
+                </p>
               </div>
 
-              {/* Key benefits - founder focused */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6">
-                <div className="text-center border border-border rounded-md p-2">
-                  <div className="text-2xl sm:text-3xl font-bold text-amber-600 mb-1">
-                    📊
+              {/* Feature grid */}
+              <div className="grid grid-cols-2 gap-4 py-6">
+                
+                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-amber-100/80 shadow-sm">
+                  <div className="flex items-center mb-2">
+                    <IconBell className="h-5 w-5 text-amber-600 mr-2" />
+                    <span className="font-semibold text-gray-900 text-sm">Smart Reminders</span>
                   </div>
-                  <div className="text-xs sm:text-sm text-muted-foreground">
-                    Meeting Prep
-                  </div>
+                  <p className="text-xs text-gray-600">
+                    Quick notes, voice memos, and follow-ups that stick
+                  </p>
                 </div>
 
-                <div className="text-center border border-border rounded-md p-2">
-                  <div className="text-2xl sm:text-3xl font-bold text-amber-500 mb-1">
-                    🗓️
+                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-amber-100/80 shadow-sm">
+                  <div className="flex items-center mb-2">
+                    <IconSunHigh className="h-5 w-5 text-amber-600 mr-2" />
+                    <span className="font-semibold text-gray-900 text-sm">Reflective Prompts</span>
                   </div>
-                  <div className="text-xs sm:text-sm text-muted-foreground">
-                    Daily Briefings
-                  </div>
+                  <p className="text-xs text-gray-600">
+                    Helps you think clearly and stay organized
+                  </p>
                 </div>
-                <div className="text-center border border-border rounded-md p-2">
-                  <div className="text-2xl sm:text-3xl font-bold text-amber-500 mb-1">
-                    💡
+
+                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-amber-100/80 shadow-sm">
+                  <div className="flex items-center mb-2">
+                    <IconBolt className="h-5 w-5 text-amber-600 mr-2" />
+                    <span className="font-semibold text-gray-900 text-sm">Mind Mirroring</span>
                   </div>
-                  <div className="text-xs sm:text-sm text-muted-foreground">
-                    Smart Reminders
-                  </div>
+                  <p className="text-xs text-gray-600">
+                    Organizes your mind, not just your tasks
+                  </p>
                 </div>
-                <div className="text-center border border-border rounded-md p-2">
-                  <div className="text-2xl sm:text-3xl font-bold text-amber-600 mb-1">
-                    📱
+
+                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-amber-100/80 shadow-sm">
+                  <div className="flex items-center mb-2">
+                    <IconBook className="h-5 w-5 text-amber-600 mr-2" />
+                    <span className="font-semibold text-gray-900 text-sm">Personal Memory</span>
                   </div>
-                  <div className="text-xs sm:text-sm text-muted-foreground">
-                    Just WhatsApp
-                  </div>
+                  <p className="text-xs text-gray-600">
+                    Learns from you, gets smarter over time
+                  </p>
                 </div>
+
               </div>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <LoginModal>
                   <Button
                     size="lg"
-                    className="h-12 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="h-12 px-8 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                   >
-                    <IconBrandWhatsapp className="mr-2 h-4 w-4" />
-                    Get Your AI Assistant
+                    Try Mnemo Today
                   </Button>
                 </LoginModal>
                 <a href="#features" className="inline-block">
                   <Button
                     size="lg"
                     variant="outline"
-                    className="h-12 px-6 rounded-xl border-2 text-foreground hover:bg-muted font-semibold text-sm transition-all duration-300"
+                    className="h-12 px-8 rounded-xl border-2 border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold transition-all duration-300"
                   >
                     <IconMessage className="mr-2 h-4 w-4" />
                     See How It Works
                   </Button>
                 </a>
               </div>
+
+              {/* Trust indicators */}
+              <div className="flex items-center space-x-6 pt-4">
+                <div className="flex items-center space-x-1">
+                  <div className="flex -space-x-1">
+                    {[1,2,3,4].map((i) => (
+                      <div key={i} className="w-6 h-6 rounded-full bg-amber-200 border-2 border-white"></div>
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600 ml-2">For thinkers & dreamers</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <span className="text-sm text-green-600">🔒</span>
+                  <span className="text-sm text-gray-600">Private & encrypted</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <span className="text-sm text-green-600">📱</span>
+                  <span className="text-sm text-gray-600">Just WhatsApp</span>
+                </div>
+              </div>
+
+              {/* Integration note */}
+              <p className="text-sm text-gray-500 border-t border-amber-100 pt-4">
+                Inspired by Mnemosyne, the Greek goddess of memory
+              </p>
+
             </div>
 
-            {/* Right side - Enhanced Use Cases Carousel */}
-            <div className="lg:col-span-5 flex justify-center lg:justify-end items-center">
-              <div className="w-full max-w-xs sm:max-w-sm mt-8 lg:mt-0">
-                <HeroCarousel />
+            {/* Right Column - Mobile Mockup */}
+            <div className="flex justify-center lg:justify-end items-center">
+              <div className="relative">
+                {/* Gradient background behind phone */}
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-200/40 to-yellow-300/30 rounded-3xl blur-3xl scale-110 opacity-60" />
+                
+                {/* Phone mockup container */}
+                <div className="relative w-80 max-w-sm">
+                  <HeroCarousel />
+                </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>

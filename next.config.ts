@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ['localhost', 'mnemo.ishaan812.com', 'mnemo.ishaan812.com'],
+    domains: ['localhost', 'orbia.ishaan812.com', 'mnemo.ishaan812.com'],
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
