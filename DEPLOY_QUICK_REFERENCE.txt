@@ -1,0 +1,197 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                                                                           ║
+║           MNEMO FRONTEND - AMAZON LINUX DEPLOYMENT                        ║
+║                    Quick Reference Card                                   ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📋 DEPLOYMENT COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Interactive Deploy (Easiest):
+  $ ./quick-deploy.sh
+
+  One-Line Deploy:
+  $ DOMAIN=your-domain.com EMAIL=you@email.com ./deploy-amazon-linux.sh
+
+  With API Key:
+  $ DOMAIN=your-domain.com EMAIL=you@email.com OPENAI_API_KEY=sk-xxx ./deploy-amazon-linux.sh
+
+  Local Deploy (No Domain):
+  $ ./deploy-amazon-linux.sh
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚙️  MANAGEMENT COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  View All Logs:               docker-compose logs -f
+  View App Logs:               docker-compose logs -f app
+  View Database Logs:          docker-compose logs -f postgres
+  
+  Check Status:                docker-compose ps
+  
+  Restart All:                 docker-compose restart
+  Restart App:                 docker-compose restart app
+  
+  Stop All:                    docker-compose down
+  Start All:                   docker-compose up -d
+  
+  Edit Config:                 nano .env
+  
+  Update App:                  git pull && docker-compose build && docker-compose up -d
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 HEALTH CHECKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Application Health:          curl http://localhost:3000/api/health
+  Check All Services:          docker-compose ps
+  System Resources:            docker stats
+  Memory Usage:                free -h
+  Disk Usage:                  df -h
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 ACCESS URLS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  With Domain:
+    HTTP:          http://your-domain.com
+    HTTPS:         https://your-domain.com
+    Health:        http://your-domain.com:3000/api/health
+  
+  Without Domain (Local):
+    Application:   http://[EC2-PUBLIC-IP]:3000
+    Health:        http://[EC2-PUBLIC-IP]:3000/api/health
+    Redis Insight: http://[EC2-PUBLIC-IP]:8001
+
+  Find Your Public IP:
+    $ curl ifconfig.me
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Service Won't Start:
+    1. Check logs:             docker-compose logs [service-name]
+    2. Restart service:        docker-compose restart [service-name]
+    3. Check status:           docker-compose ps
+
+  Can't Access Application:
+    1. Check EC2 Security Group allows ports 80, 443, 3000
+    2. Verify services:        docker-compose ps
+    3. Check firewall:         sudo firewall-cmd --list-all
+    4. Test locally:           curl http://localhost:3000
+
+  Database Issues:
+    Connect to DB:             docker exec -it mnemo-postgres psql -U mnemo -d mnemo_db
+    Check DB logs:             docker-compose logs postgres
+    Restart DB:                docker-compose restart postgres
+
+  SSL Certificate Issues:
+    Manual cert:               sudo certbot certonly --standalone -d your-domain.com
+    Copy cert:                 sudo cp /etc/letsencrypt/live/your-domain.com/*.pem ssl/
+    Restart nginx:             docker-compose restart nginx
+
+  Memory Issues:
+    Check memory:              free -h
+    Check Docker usage:        docker stats
+    Increase limits:           Edit docker-compose.yml (increase memory limits)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💾 BACKUP & RESTORE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Backup Database:
+    $ docker exec mnemo-postgres pg_dump -U mnemo mnemo_db > backup.sql
+
+  Restore Database:
+    $ cat backup.sql | docker exec -i mnemo-postgres psql -U mnemo mnemo_db
+
+  Backup Redis:
+    $ docker exec mnemo-redis redis-cli SAVE
+    $ docker cp mnemo-redis:/data/dump.rdb ./redis-backup.rdb
+
+  Backup Environment:
+    $ cp .env .env.backup
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔐 SECURITY CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ☐ EC2 Security Group configured (ports 22, 80, 443)
+  ☐ Strong passwords in .env file
+  ☐ Real OpenAI API key configured
+  ☐ Let's Encrypt SSL certificate (for production)
+  ☐ DNS A record pointing to server
+  ☐ Regular backups scheduled
+  ☐ Monitoring set up
+  ☐ Redis Insight disabled in production (remove from nginx.conf)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 SERVICES DEPLOYED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✅ mnemo-app         Next.js Application       Port 3000
+  ✅ mnemo-postgres    PostgreSQL 17 + pgvector  Port 5433
+  ✅ mnemo-redis       Redis Stack               Port 6379, 8001
+  ✅ mnemo-scheduler   Background Jobs           Internal
+  ✅ mnemo-nginx       Reverse Proxy + SSL       Port 80, 443
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📁 IMPORTANT FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  .env                         Environment variables (KEEP SECRET!)
+  docker-compose.yml           Service configuration
+  nginx.conf                   Nginx/SSL configuration
+  ssl/                         SSL certificates directory
+  deployment-info.txt          Deployment details and passwords
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚨 EMERGENCY COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Stop Everything:             docker-compose down
+  Restart Everything:          docker-compose restart
+  Nuke and Restart:            docker-compose down -v && docker-compose up -d
+  Check Disk Space:            df -h
+  Free Up Space:               docker system prune -a
+  Kill All Docker:             docker kill $(docker ps -q)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  README_DEPLOYMENT.md            Quick start guide
+  AMAZON_LINUX_DEPLOYMENT.md      Comprehensive deployment guide
+  DEPLOY_QUICK_REFERENCE.txt      This file
+  deployment-info.txt             Your deployment passwords/info
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Always use a real domain in production
+  • Set up monitoring from day one
+  • Schedule regular database backups
+  • Keep your .env file secure and backed up
+  • Review logs daily: docker-compose logs -f
+  • Update regularly: git pull && docker-compose build && docker-compose up -d
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Need detailed help? See: AMAZON_LINUX_DEPLOYMENT.md
+
+Last Updated: October 2025 | Version 1.0.0
+
