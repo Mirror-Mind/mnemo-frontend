@@ -58,16 +58,23 @@ log_success "System packages updated"
 # Step 2: Install Required System Packages
 ################################################################################
 log_info "Step 2/10: Installing system dependencies..."
-sudo yum install -y \
+if command -v dnf >/dev/null 2>&1; then
+    PM="dnf"
+    INSTALL_OPTS="-y --allowerasing"
+else
+    PM="yum"
+    INSTALL_OPTS="-y"
+fi
+
+# Avoid installing 'curl' to prevent conflicts with curl-minimal on Amazon Linux
+# Use certbot in standalone mode; nginx plugin is not required
+sudo $PM install $INSTALL_OPTS \
     git \
-    curl \
     wget \
     vim \
     htop \
     openssl \
-    certbot \
-    python3-certbot-nginx \
-    nc
+    certbot
 
 log_success "System dependencies installed"
 
@@ -109,7 +116,11 @@ log_info "Step 4/10: Installing Docker Compose..."
 
 # Install Docker Compose v2
 DOCKER_COMPOSE_VERSION="v2.24.6"
-sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+if command -v curl >/dev/null 2>&1; then
+    sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+else
+    sudo wget -O /usr/local/bin/docker-compose "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)"
+fi
 sudo chmod +x /usr/local/bin/docker-compose
 sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
 
