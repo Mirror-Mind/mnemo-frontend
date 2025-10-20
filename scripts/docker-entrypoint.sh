@@ -33,13 +33,15 @@ wait_for_redis() {
 check_postgres
 wait_for_redis
 
-# Run database migrations
+# Run database migrations (optional - may have already run or may not have prisma CLI available)
 echo "🔄 Running database migrations..."
-npx prisma migrate deploy
-
-# Generate Prisma client (in case it's needed)
-echo "🔧 Generating Prisma client..."
-npx prisma generate
+if command -v npx &> /dev/null; then
+    npx prisma migrate deploy || echo "⚠️  Migration failed or already applied, continuing..."
+    echo "🔧 Generating Prisma client..."
+    npx prisma generate || echo "⚠️  Prisma generation failed, continuing..."
+else
+    echo "⚠️  Prisma CLI not available, skipping migrations..."
+fi
 
 # Start the application
 echo "🎉 Starting the application..."

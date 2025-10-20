@@ -66,8 +66,9 @@ RUN npm run build
 FROM base AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
+# Install all dependencies - we need prisma CLI for runtime migrations
 RUN \
-  if [ -f package-lock.json ]; then npm ci --legacy-peer-deps --omit=dev; \
+  if [ -f package-lock.json ]; then npm ci --legacy-peer-deps; \
   else echo "Lockfile not found." && exit 1; \
   fi
 
@@ -92,6 +93,9 @@ RUN chown nextjs:nodejs .next
 # Copy production node_modules
 COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
+# Copy .prisma/client and prisma directory
+COPY --from=builder --chown=nextjs:nodejs /app/.prisma ./.prisma
+
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -99,7 +103,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Copy Prisma files for migrations
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copy scheduler files
 COPY --from=builder --chown=nextjs:nodejs /app/scheduler ./scheduler
