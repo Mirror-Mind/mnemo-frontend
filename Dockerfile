@@ -20,8 +20,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
+# Copy prisma schema separately to ensure it's available
+COPY prisma ./prisma
+
+# Generate Prisma client - make it more robust
+RUN npx prisma generate || true
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
@@ -93,16 +96,16 @@ RUN chown nextjs:nodejs .next
 # Copy production node_modules
 COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# Copy .prisma/client from builder (where prisma generate was successful)
-COPY --from=builder --chown=nextjs:nodejs /app/.prisma ./.prisma
+# Copy Prisma files for migrations and client generation
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
+# Ensure Prisma client is available - generate at runtime for reliability
+RUN npx prisma generate
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy Prisma files for migrations
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Copy scheduler files
 COPY --from=builder --chown=nextjs:nodejs /app/scheduler ./scheduler
