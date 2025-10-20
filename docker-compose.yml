@@ -6,6 +6,10 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_VERSION=20
+    environment:
+      - npm_config_jobs=2
+      - npm_config_maxsockets=3
+      - NPM_CONFIG_LOGLEVEL=warn
     container_name: mnemo-app
     restart: unless-stopped
     ports:

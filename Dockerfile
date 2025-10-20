@@ -11,8 +11,9 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 ENV NPM_CONFIG_LOGLEVEL=warn
 ENV NPM_CONFIG_CACHE=/tmp/npm-cache
+ENV npm_config_jobs=2 npm_config_maxsockets=3
 RUN \
-  if [ -f package-lock.json ]; then npm ci --legacy-peer-deps --no-audit --fund=false --no-optional; \
+  if [ -f package-lock.json ]; then npm ci --legacy-peer-deps --omit=dev --no-audit --fund=false --no-optional; \
   else echo "Lockfile not found." && exit 1; \
   fi && \
   npm cache clean --force && rm -rf /tmp/npm-cache
@@ -23,8 +24,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
+# Skip Prisma client generation at build time to reduce dev deps; it's done at runtime by entrypoint
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry

@@ -397,3 +397,4 @@ cd /path/to/mnemo-frontend
 *Tested on: Amazon Linux 2, Amazon Linux 2023*  
 *Compatible with: Mnemo Frontend Docker Compose Stack*
 
+

@@ -305,3 +305,4 @@ Found a bug? Have a suggestion? Please open an issue or submit a pull request!
 
 Made with ❤️ for easy deployment
 
+
