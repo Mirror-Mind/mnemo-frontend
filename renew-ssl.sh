@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# SSL Renewal Script for mnemo.ishaan812.com and scattegories.ishaan812.com
+# SSL Renewal Script for mnemo.ishaan812.com
 # This script renews SSL certificates and restarts nginx
 
 set -e
@@ -8,9 +8,9 @@ set -e
 echo "🔄 Starting SSL certificate renewal process..."
 
 # Check if containers are running
-if ! docker compose ps | grep -q "nginx.*Up"; then
+if ! docker-compose ps | grep -q "nginx.*Up"; then
     echo "⚠️ Nginx container is not running. Starting containers..."
-    docker compose up -d
+    docker-compose up -d
     sleep 10
 fi
 
@@ -33,7 +33,7 @@ if sudo certbot renew --quiet; then
     
     # Restart nginx to load new certificates
     echo "🔄 Restarting nginx with new certificates..."
-    docker compose restart nginx
+    docker-compose restart nginx
     
     echo "✅ SSL renewal completed successfully!"
     
@@ -41,13 +41,11 @@ if sudo certbot renew --quiet; then
     sleep 10
     echo "🔍 Verifying renewed certificates..."
     
-    for domain in "mnemo.ishaan812.com" "scattegories.ishaan812.com"; do
-        if curl -I --connect-timeout 10 --max-time 30 "https://$domain" >/dev/null 2>&1; then
-            echo "  ✅ $domain SSL is working"
-        else
-            echo "  ❌ $domain SSL verification failed"
-        fi
-    done
+    if curl -I --connect-timeout 10 --max-time 30 "https://mnemo.ishaan812.com" >/dev/null 2>&1; then
+        echo "  ✅ mnemo.ishaan812.com SSL is working"
+    else
+        echo "  ❌ mnemo.ishaan812.com SSL verification failed"
+    fi
     
 else
     echo "❌ Certificate renewal failed"

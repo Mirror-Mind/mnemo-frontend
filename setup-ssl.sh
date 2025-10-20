@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# SSL Setup Script for mnemo.ishaan812.com and scattegories.ishaan812.com
-# This script helps set up Let's Encrypt SSL certificates for both domains
+# SSL Setup Script for mnemo.ishaan812.com
+# This script helps set up Let's Encrypt SSL certificates
 
 set -e
 
-DOMAINS=("mnemo.ishaan812.com" "scattegories.ishaan812.com")
+DOMAINS=("mnemo.ishaan812.com")
 EMAIL="ishaan.shah@gmail.com"  # Replace with your actual email
 
 echo "Setting up SSL certificates for domains: ${DOMAINS[@]}"
@@ -55,7 +55,7 @@ if ! command -v certbot &> /dev/null; then
     fi
 fi
 
-# Check current SSL status for both domains
+# Check current SSL status
 echo "Checking current SSL status..."
 for domain in "${DOMAINS[@]}"; do
     if check_existing_ssl "$domain"; then
@@ -67,10 +67,10 @@ done
 
 # Stop nginx container to free up ports
 echo "Stopping nginx container temporarily..."
-docker compose stop nginx || true
+docker-compose stop nginx || true
 
-# Generate certificates for both domains
-echo "Generating SSL certificates for both domains..."
+# Generate certificates
+echo "Generating SSL certificates..."
 
 # Try standalone mode first (when ports 80/443 are free)
 if sudo certbot certonly \
@@ -79,8 +79,7 @@ if sudo certbot certonly \
     --agree-tos \
     --no-eff-email \
     --expand \
-    -d mnemo.ishaan812.com \
-    -d scattegories.ishaan812.com; then
+    -d mnemo.ishaan812.com; then
     
     echo "✓ Certificates generated successfully using standalone mode"
     
@@ -100,7 +99,7 @@ else
     cp nginx.conf nginx.conf.backup
     
     # Start nginx container
-    docker compose up -d nginx
+    docker-compose up -d nginx
     
     # Wait for nginx to be ready
     sleep 10
@@ -113,8 +112,7 @@ else
         --agree-tos \
         --no-eff-email \
         --expand \
-        -d mnemo.ishaan812.com \
-        -d scattegories.ishaan812.com
+        -d mnemo.ishaan812.com
     
     if [ $? -eq 0 ]; then
         echo "✓ Certificates generated successfully using webroot mode"
@@ -136,7 +134,7 @@ fi
 
 # Restart nginx container with SSL
 echo "Restarting nginx container with SSL configuration..."
-docker compose restart nginx
+docker-compose restart nginx
 
 # Wait for nginx to start
 sleep 10
@@ -152,13 +150,12 @@ for domain in "${DOMAINS[@]}"; do
 done
 
 echo "🎉 SSL setup complete!"
-echo "Your sites should now be accessible at:"
+echo "Your site should now be accessible at:"
 echo "  - https://mnemo.ishaan812.com"
-echo "  - https://scattegories.ishaan812.com"
 
 # Set up auto-renewal
 echo "Setting up certificate auto-renewal..."
-(crontab -l 2>/dev/null | grep -v "certbot renew"; echo "0 12 * * * /usr/bin/certbot renew --quiet && cd $(pwd) && docker compose restart nginx") | crontab -
+(crontab -l 2>/dev/null | grep -v "certbot renew"; echo "0 12 * * * /usr/bin/certbot renew --quiet && cd $(pwd) && docker-compose restart nginx") | crontab -
 
 echo "✅ Auto-renewal configured to run daily at 12 PM"
 
