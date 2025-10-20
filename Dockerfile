@@ -72,6 +72,10 @@ RUN \
   else echo "Lockfile not found." && exit 1; \
   fi
 
+# Generate Prisma client in prod-deps stage
+COPY prisma ./prisma
+RUN npx prisma generate
+
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
@@ -93,7 +97,10 @@ RUN chown nextjs:nodejs .next
 # Copy production node_modules
 COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# Copy .prisma/client and prisma directory
+# Copy .prisma/client from prod-deps (where it was generated)
+COPY --from=prod-deps --chown=nextjs:nodejs /app/.prisma ./.prisma
+
+# Also keep the backup copy from builder for build artifacts
 COPY --from=builder --chown=nextjs:nodejs /app/.prisma ./.prisma
 
 # Automatically leverage output traces to reduce image size
