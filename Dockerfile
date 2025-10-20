@@ -1,5 +1,5 @@
 # Dockerfile for Mnemo Production Deployment
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -9,10 +9,13 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
+ENV NPM_CONFIG_LOGLEVEL=warn
+ENV NPM_CONFIG_CACHE=/tmp/npm-cache
 RUN \
-  if [ -f package-lock.json ]; then npm ci --legacy-peer-deps; \
+  if [ -f package-lock.json ]; then npm ci --legacy-peer-deps --no-audit --fund=false --no-optional; \
   else echo "Lockfile not found." && exit 1; \
-  fi
+  fi && \
+  npm cache clean --force && rm -rf /tmp/npm-cache
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -63,13 +66,7 @@ ENV WHATSAPP_VERIFY_TOKEN=${WHATSAPP_VERIFY_TOKEN:-dummy-verify-token}
 RUN npm run build
 
 # Production dependencies
-FROM base AS prod-deps
-WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN \
-  if [ -f package-lock.json ]; then npm ci --legacy-peer-deps --omit=dev; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+# Remove separate prod-deps stage to reduce duplication and disk usage
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -90,7 +87,8 @@ RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
 # Copy production node_modules
-COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+# Use node_modules from builder (contains dev deps used for build), then prune dev deps
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
@@ -108,9 +106,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/scheduler ./scheduler
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 RUN chmod +x ./scripts/docker-entrypoint.sh
 
-# Install netcat for health checks
+# Install netcat for health checks and prune dev dependencies to save space
 USER root
 RUN apk add --no-cache netcat-openbsd wget
+ENV NPM_CONFIG_LOGLEVEL=warn \
+    NPM_CONFIG_CACHE=/tmp/npm-cache
+RUN npm prune --omit=dev && npm cache clean --force && rm -rf /tmp/npm-cache
 USER nextjs
 
 EXPOSE 3000
